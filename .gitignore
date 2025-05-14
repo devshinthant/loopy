@@ -2,33 +2,5 @@
 node_modules/
 **/node_modules/
 
-
-# Build outputs
-/dist/
-/build/
-/client/dist/
-/client/build/
-/server/dist/
-/server/build/
-
-# Coverage and logs
-/coverage/
-/logs/
-/client/coverage/
-/client/logs/
-/server/coverage/
-/server/logs/
-
-# Temporary files
-/temp/
-/client/temp/
-/server/temp/
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Certificates
+**/certs/
