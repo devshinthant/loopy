@@ -4,7 +4,11 @@ async function createWorker() {
   const worker = await mediasoup.createWorker({
     logLevel: "info",
     logTags: ["info"],
+    rtcMinPort: 2000,
+    rtcMaxPort: 2020,
   });
+
+  console.log("Worker Process Id", worker.pid);
 
   worker.on("died", () => {
     console.error(

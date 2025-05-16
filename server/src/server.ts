@@ -20,3 +20,5 @@ const server = https.createServer(options, app);
 server.listen(3000, () => {
   console.log("HTTPS Server is running on port 3000");
 });
+
+export default server;
