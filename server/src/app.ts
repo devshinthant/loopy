@@ -56,15 +56,38 @@ peers.on("connection", async (socket) => {
         });
       }
 
-      console.log({ roomId, password });
-
       const newRoom = new Room(roomId, password, router);
       rooms.set(roomId, newRoom);
+
+      newRoom.addPeer(socket);
+
       callback({
         message: "Room created",
       });
     }
   );
+
+  socket.on("joinRoom", ({ roomId, password }, callback) => {
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      return callback({
+        error: "Room not found",
+      });
+    }
+
+    if (room.password !== password) {
+      return callback({ error: "Invalid password" });
+    }
+
+    room.addPeer(socket);
+
+    callback({
+      message: "Joined room",
+    });
+
+    /* Get Existing Producers */
+  });
 
   /* Old Stuff */
   socket.on("disconnect", () => {
@@ -81,16 +104,22 @@ peers.on("connection", async (socket) => {
     callback({ rtpCapabilities });
   });
 
-  socket.on("createTransport", async ({ sender }, callback) => {
+  socket.on("createTransport", async ({ sender, roomId }, callback) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const peer = room.getPeer(socket);
+    if (!peer) return;
+
     if (sender) {
       const transport = await createTransport(callback);
       if (transport) {
-        producerTransport = transport;
+        peer.addProducerTransport(transport);
       }
     } else {
       const transport = await createTransport(callback);
       if (transport) {
-        consumerTransport = transport;
+        peer.addConsumerTransport(socket.id, transport);
       }
     }
   });

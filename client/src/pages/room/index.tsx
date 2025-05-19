@@ -43,10 +43,19 @@ export default function Room() {
 
   function onJoinRoom(values: z.infer<typeof roomSchema>) {
     if (!socket) return;
-    socket.emit("joinRoom", {
-      roomId: values.roomName,
-      password: values.password,
-    });
+    socket.emit(
+      "joinRoom",
+      {
+        roomId: values.roomName,
+        password: values.password,
+      },
+      (data: { message: string; error: string }) => {
+        if (data.error) {
+          console.log(data.error);
+        }
+        console.log(data.message);
+      }
+    );
   }
 
   function onCreateRoom() {
