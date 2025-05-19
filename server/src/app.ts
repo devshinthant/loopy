@@ -17,9 +17,13 @@ export let router: mediasoup.types.Router<mediasoup.types.AppData>;
 
 /* Transports */
 let producerTransport: mediasoup.types.WebRtcTransport;
+let consumerTransport: mediasoup.types.WebRtcTransport;
 
 /* Producers */
 let producer: mediasoup.types.Producer;
+
+/* Consumers */
+let consumer: mediasoup.types.Consumer;
 
 const peers = io.of("/mediasoup");
 
@@ -50,6 +54,11 @@ peers.on("connection", async (socket) => {
       if (transport) {
         producerTransport = transport;
       }
+    } else {
+      const transport = await createTransport(callback);
+      if (transport) {
+        consumerTransport = transport;
+      }
     }
   });
 
@@ -74,9 +83,50 @@ peers.on("connection", async (socket) => {
     callback({ id: producer.id });
   });
 
-  //   socket.on("connectConsumerTransport", async ({ dtlsParameters }) => {});
+  socket.on("consumeMedia", async ({ rtpCapabilities }, callback) => {
+    try {
+      if (producer) {
+        if (!router.canConsume({ producerId: producer.id, rtpCapabilities })) {
+          return console.log("Cannot consume media");
+        }
 
-  //   socket.on("consumeMedia", async ({ rtpCapabilities }, callback) => {});
+        consumer = await consumerTransport.consume({
+          producerId: producer.id,
+          rtpCapabilities,
+          paused: producer.kind === "video",
+        });
 
-  //   socket.on("resumePausedConsumer", async (data) => {});
+        consumer.on("transportclose", () => {
+          console.log("Consumer transport closed");
+          consumer.close();
+        });
+
+        consumer.on("producerclose", () => {
+          console.log("Producer closed");
+          consumer.close();
+        });
+
+        callback({
+          producerId: producer.id,
+          id: consumer.id,
+          kind: consumer.kind,
+          rtpParameters: consumer.rtpParameters,
+        });
+      }
+    } catch (error) {
+      callback({
+        params: {
+          error,
+        },
+      });
+    }
+  });
+
+  socket.on("connectConsumerTransport", async ({ dtlsParameters }) => {
+    await consumerTransport.connect({ dtlsParameters });
+  });
+
+  socket.on("resumePausedConsumer", async () => {
+    await consumer.resume();
+  });
 });
