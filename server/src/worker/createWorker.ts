@@ -1,12 +1,12 @@
-const mediasoup = require("mediasoup");
+import * as mediasoup from "mediasoup";
 
 async function createWorker() {
-  const worker = await mediasoup.createWorker({
-    logLevel: "info",
-    logTags: ["info"],
+  const config = {
     rtcMinPort: 2000,
     rtcMaxPort: 2020,
-  });
+  };
+
+  const worker = await mediasoup.createWorker(config);
 
   console.log("Worker Process Id", worker.pid);
 

@@ -1,24 +1,25 @@
 import { Request, Response } from "express";
 import express from "express";
-import https from "https";
-import fs from "fs";
-import path from "path";
+import http from "http";
+import cors from "cors";
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "*",
+    credentials: true,
+  })
+);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });
 
-const options = {
-  key: fs.readFileSync(path.join(__dirname, "/certs/key.pem")),
-  cert: fs.readFileSync(path.join(__dirname, "/certs/cert.pem")),
-};
+const server = http.createServer(app);
 
-const server = https.createServer(options, app);
-
-server.listen(3000, () => {
-  console.log("HTTPS Server is running on port 3000");
+server.listen(4000, () => {
+  console.log("HTTP Server is running on port 4000");
 });
 
 export default server;
