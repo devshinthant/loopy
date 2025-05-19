@@ -4,6 +4,7 @@ import server from "./server";
 import createWorker from "./worker/createWorker";
 import mediaCodecs from "./config";
 import createTransport from "./transports/createTransport";
+import Room from "./room/room";
 
 const io = new Server(server, {
   cors: {
@@ -27,6 +28,8 @@ let consumer: mediasoup.types.Consumer;
 
 const peers = io.of("/mediasoup");
 
+const rooms = new Map<string, Room>();
+
 peers.on("connection", async (socket) => {
   console.log("New Connection", socket.id);
 
@@ -34,6 +37,36 @@ peers.on("connection", async (socket) => {
     socketId: socket.id,
   });
 
+  socket.on(
+    "createRoom",
+    (
+      { roomId, password },
+      callback: ({
+        message,
+        error,
+      }: {
+        message?: string;
+        error?: string;
+      }) => void
+    ) => {
+      const room = rooms.get(roomId);
+      if (room) {
+        return callback({
+          error: "Room already existed",
+        });
+      }
+
+      console.log({ roomId, password });
+
+      const newRoom = new Room(roomId, password, router);
+      rooms.set(roomId, newRoom);
+      callback({
+        message: "Room created",
+      });
+    }
+  );
+
+  /* Old Stuff */
   socket.on("disconnect", () => {
     console.log("Client disconnected", socket.id);
   });
