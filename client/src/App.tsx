@@ -2,11 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import io, { Socket } from "socket.io-client";
 import { Button } from "./components/ui/button";
 import { Device, type Device as DeviceType } from "mediasoup-client";
-import type { RtpCapabilities } from "mediasoup-client/types";
+import type {
+  DtlsParameters,
+  IceCandidate,
+  IceParameters,
+  RtpCapabilities,
+  Transport,
+} from "mediasoup-client/types";
 
 function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  // const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   const [params, setParams] = useState({
     encoding: [
@@ -22,8 +28,8 @@ function App() {
 
   const [rtpCapabilities, setRtpCapabilities] = useState<RtpCapabilities>();
 
-  const [producerTransport, setProducerTransport] = useState<unknown>();
-  const [consumerTransport, setConsumerTransport] = useState<unknown>();
+  const [producerTransport, setProducerTransport] = useState<Transport>();
+  // const [consumerTransport, setConsumerTransport] = useState<unknown>();
 
   const startCamera = async () => {
     try {
@@ -59,10 +65,91 @@ function App() {
       await device.load({
         routerRtpCapabilities: rtpCapabilities,
       });
+      console.log({ device });
 
       setDevice(device);
     } catch (error) {
       console.error("Error creating device:", error);
+    }
+  };
+
+  const createProducerTransport = async () => {
+    if (!socket || !device) {
+      return console.log("No socket or device");
+    }
+
+    socket.emit(
+      "createTransport",
+      { sender: true },
+      (params: {
+        id: string;
+        iceParameters: IceParameters;
+        iceCandidates: IceCandidate[];
+        dtlsParameters: DtlsParameters;
+        error?: string;
+      }) => {
+        if (params.error) {
+          return console.log(params.error);
+        }
+
+        const transport = device.createSendTransport(params);
+        setProducerTransport(transport);
+
+        transport.on(
+          "connect",
+          async ({ dtlsParameters }, callback, errorBack) => {
+            console.log("connect run");
+
+            try {
+              socket.emit("connectProducerTransport", { dtlsParameters });
+              callback();
+            } catch (error) {
+              errorBack(error as Error);
+            }
+          }
+        );
+
+        transport.on("produce", (params, callback, errorBack) => {
+          const { kind, rtpParameters } = params;
+          try {
+            console.log("produce run");
+
+            socket.emit(
+              "transport-produce",
+              { kind, rtpParameters },
+              ({ id }: { id: string }) => {
+                console.log("Server producer created", { id });
+
+                callback({ id });
+              }
+            );
+          } catch (error) {
+            errorBack(error as Error);
+          }
+        });
+      }
+    );
+  };
+
+  const connectProducerTransport = async () => {
+    if (!socket || !producerTransport) {
+      return console.log("No socket or producer transport");
+    }
+
+    try {
+      const localProducer = await producerTransport.produce(params);
+
+      localProducer.on("transportclose", () => {
+        console.log("Producer transport closed");
+        localProducer.close();
+      });
+
+      localProducer.on("trackended", () => {
+        console.log("Producer transport ended");
+        localProducer.close();
+      });
+    } catch (error) {
+      console.error("Error connecting producer transport:", error);
     }
   };
 
@@ -82,10 +169,16 @@ function App() {
   return (
     <div>
       {/* <video ref={videoRef} id="localvideo" autoPlay playsInline /> */}
-      <video ref={remoteVideoRef} id="remotevideo" autoPlay playsInline />
+      {/* <video ref={remoteVideoRef} id="remotevideo" autoPlay playsInline /> */}
       <Button onClick={getRtpCapabilities}> Get RTP CAPABILITIES </Button>
-
       <Button onClick={createDevice}>Create Device</Button>
+      <Button onClick={createProducerTransport}>
+        Create Producer Transport
+      </Button>
+
+      <Button onClick={connectProducerTransport}>
+        Connect Producer Transport
+      </Button>
     </div>
   );
 }
