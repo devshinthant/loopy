@@ -5,33 +5,39 @@ class Peer {
   socket: Socket;
 
   producerTransport: Transport | undefined;
-  producer: Producer | undefined;
+  audioProducer: Producer | undefined;
+  videoProducer: Producer | undefined;
 
-  consumerTransports: Map<string, Transport> | undefined;
+  consumerTransport: Transport | undefined;
   consumers: Map<string, Consumer> | undefined;
 
   constructor(socket: Socket) {
     this.socket = socket;
     this.producerTransport = undefined;
-    this.producer = undefined;
-    this.consumerTransports = new Map();
+    this.audioProducer = undefined;
+    this.videoProducer = undefined;
+    this.consumerTransport = undefined;
     this.consumers = new Map();
-  }
-
-  addConsumerTransport(id: string, transport: Transport) {
-    this.consumerTransports?.set(id, transport);
-  }
-
-  addConsumer(id: string, consumer: Consumer) {
-    this.consumers?.set(id, consumer);
-  }
-
-  addProducer(producer: Producer) {
-    this.producer = producer;
   }
 
   addProducerTransport(transport: Transport) {
     this.producerTransport = transport;
+  }
+
+  addAudioProducer(producer: Producer) {
+    this.audioProducer = producer;
+  }
+
+  addVideoProducer(producer: Producer) {
+    this.videoProducer = producer;
+  }
+
+  addConsumerTransport(transport: Transport) {
+    this.consumerTransport = transport;
+  }
+
+  addConsumer(producerId: string, consumer: Consumer) {
+    this.consumers?.set(producerId, consumer);
   }
 }
 

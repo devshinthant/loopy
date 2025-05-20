@@ -3,9 +3,10 @@ import {
   IceCandidate,
   IceParameters,
 } from "mediasoup/node/lib/WebRtcTransportTypes";
-import { router } from "../app";
+import { rooms } from "../app";
 
 const createTransport = async (
+  roomId: string,
   callback: (
     params:
       | {
@@ -31,11 +32,22 @@ const createTransport = async (
       preferUdp: true,
     };
 
-    console.log("transport creating", router);
+    const room = rooms.get(roomId);
+    if (!room) {
+      return callback({
+        error: "Room not found",
+      });
+    }
 
-    const transport = await router.createWebRtcTransport(
+    const transport = await room.router?.createWebRtcTransport(
       webRtcTransportOptions
     );
+
+    if (!transport) {
+      return callback({
+        error: "Failed to create transport",
+      });
+    }
 
     transport.on("dtlsstatechange", (dtlsState) => {
       if (dtlsState === "closed") {

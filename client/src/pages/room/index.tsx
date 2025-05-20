@@ -1,167 +1,256 @@
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useEffect, useState } from "react";
-import { io, type Socket } from "socket.io-client";
-
-const roomSchema = z.object({
-  roomName: z.string().min(1, {
-    message: "Room name is required",
-  }),
-  password: z.string().min(5, {
-    message: "Password must be at least 5 characters long",
-  }),
-});
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Video, VideoOff } from "lucide-react";
+import { VideoDisplay } from "./components/VideoDisplay";
+import useSocketStore from "@/store/socket";
+import { redirect, useParams } from "react-router";
+import type {
+  DtlsParameters,
+  IceCandidate,
+  IceParameters,
+  RtpCapabilities,
+  RtpParameters,
+} from "mediasoup-client/types";
+import { Device } from "mediasoup-client";
+import useRoomStore from "@/store/room";
+import useTransportsStore from "@/store/transports";
+import useProducersStore from "@/store/producers";
 
 export default function Room() {
-  const [socket, setSocket] = useState<Socket>();
+  const params = useParams();
+  const roomId = params.roomId as string;
 
-  const form = useForm<z.infer<typeof roomSchema>>({
-    resolver: zodResolver(roomSchema),
-    defaultValues: {
-      roomName: "",
-      password: "",
-    },
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const { setRtpCapabilities, setDevice, device, rtpCapabilities } =
+    useRoomStore();
+  const { socket } = useSocketStore();
+  const { setProduceTransport, setReceiveTransport } = useTransportsStore();
+  const { setVideoProducer } = useProducersStore();
+
+  const [videoConf, setVideoConf] = useState({
+    encoding: [
+      { rid: "r0", maxBitrate: 100000, scalabilityMode: "S1T3" },
+      { rid: "r1", maxBitrate: 300000, scalabilityMode: "S1T3" },
+      { rid: "r2", maxBitrate: 900000, scalabilityMode: "S1T3" },
+    ],
+    codecOptions: { videoGoogleStartBitrate: 1000 },
   });
 
-  function onJoinRoom(values: z.infer<typeof roomSchema>) {
-    if (!socket) return;
-    socket.emit(
-      "joinRoom",
-      {
-        roomId: values.roomName,
-        password: values.password,
-      },
-      (data: { message: string; error: string }) => {
-        if (data.error) {
-          console.log(data.error);
+  const [isCameraOn, setIsCameraOn] = useState(false);
+  const [disableCamera, setDisableCamera] = useState(true);
+
+  const toggleCamera = async () => {
+    if (!socket || !device) return;
+    setIsCameraOn(!isCameraOn);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      let closureVideoConf;
+      if (videoRef.current) {
+        const track = stream.getVideoTracks()[0];
+
+        videoRef.current.srcObject = stream;
+        closureVideoConf = { ...videoConf, track };
+        setVideoConf((current) => ({ ...current, track }));
+      }
+
+      if (!closureVideoConf) return;
+
+      socket.emit(
+        "createTransport",
+        { sender: true, roomId },
+        async (params: {
+          id: string;
+          iceParameters: IceParameters;
+          iceCandidates: IceCandidate[];
+          dtlsParameters: DtlsParameters;
+          error?: string;
+        }) => {
+          if (params.error) {
+            console.error(params.error);
+            return;
+          }
+
+          const transport = device.createSendTransport(params);
+          setProduceTransport(transport);
+
+          transport.on(
+            "connect",
+            async ({ dtlsParameters }, callback, errorBack) => {
+              try {
+                socket.emit("connectProducerTransport", {
+                  dtlsParameters,
+                  roomId,
+                });
+                callback();
+              } catch (error) {
+                errorBack(error as Error);
+              }
+            }
+          );
+
+          transport.on("produce", (params, callback, errorBack) => {
+            const { kind, rtpParameters } = params;
+
+            console.log("Producing");
+
+            try {
+              socket.emit(
+                "transport-produce",
+                { kind, rtpParameters, roomId },
+                ({ id }: { id: string }) => {
+                  console.log("Server producer created", { id });
+                  callback({ id });
+                }
+              );
+            } catch (error) {
+              errorBack(error as Error);
+            }
+          });
+
+          const localProducer = await transport.produce(closureVideoConf);
+          setVideoProducer(localProducer);
+
+          console.log("Local producer created", localProducer);
         }
-        console.log(data.message);
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  /* Load Router Setup */
+  useEffect(() => {
+    if (!socket || !roomId) return;
+    socket.emit(
+      "getRouterRtpCapabilities",
+      { roomId },
+      ({
+        error,
+        rtpCapabilities,
+      }: {
+        error: string;
+        rtpCapabilities: RtpCapabilities;
+      }) => {
+        if (!error) {
+          setRtpCapabilities(rtpCapabilities);
+
+          const device = new Device();
+          device.load({
+            routerRtpCapabilities: rtpCapabilities,
+          });
+          setDevice(device);
+          setDisableCamera(false);
+        }
       }
     );
-  }
+  }, [roomId, socket, setRtpCapabilities, setDevice]);
 
-  function onCreateRoom() {
-    if (!form.formState.isValid) return;
+  /* Create Receive Transport */
+  useEffect(() => {
+    if (!socket || !roomId || !device) return;
 
-    const values = form.getValues();
-
-    if (!socket) return;
     socket.emit(
-      "createRoom",
-      {
-        roomId: values.roomName,
-        password: values.password,
-      },
-      (data: { message: string; error: string }) => {
-        if (data.error) {
-          console.log(data.error);
+      "createTransport",
+      { sender: false, roomId },
+      (params: {
+        id: string;
+        iceParameters: IceParameters;
+        iceCandidates: IceCandidate[];
+        dtlsParameters: DtlsParameters;
+        error: string;
+      }) => {
+        if (params.error) {
+          return console.log(params.error);
         }
-        console.log(data.message);
+
+        const transport = device.createRecvTransport(params);
+        setReceiveTransport(transport);
+
+        transport.on("connect", ({ dtlsParameters }, callback, errorBack) => {
+          try {
+            socket.emit(
+              "connectConsumerTransport",
+              {
+                dtlsParameters,
+                roomId,
+              },
+              (params: { message: string }) => {
+                if (params.message) {
+                  console.log(params.message);
+                }
+              }
+            );
+            callback();
+          } catch (error) {
+            errorBack(error as Error);
+          }
+        });
       }
     );
-  }
+  }, [socket, roomId, device, setReceiveTransport, rtpCapabilities]);
 
   useEffect(() => {
-    const socket = io("http://localhost:4000/mediasoup");
-
-    socket.on("connection-success", (data) => {
-      console.log(data);
-
-      setSocket(socket);
-      // startCamera();
+    socket?.on("WTF", (data) => {
+      console.log("Received producers from server:", data);
     });
+  }, [socket, roomId, device]);
 
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+  if (!roomId) {
+    redirect("/setup");
+    return <div>Room not found</div>;
+  }
 
   return (
-    <div className="w-dvw h-dvh flex items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>A Room</CardTitle>
-          <CardDescription>
-            Set up your room details to start a video conference
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onJoinRoom)}>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-3">
-                  <FormField
-                    control={form.control}
-                    name="roomName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Room Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="My Video Conference"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid gap-3">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="********"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Button variant="outline" type="submit" className="w-full">
-                    Join Existing Room
-                  </Button>
-                  <Button
-                    onClick={onCreateRoom}
-                    type="button"
-                    className="w-full"
-                  >
-                    Create Room
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+    <div className="flex h-screen w-full flex-col overflow-hidden">
+      {/* Main content area - can be extended with additional elements later */}
+      <div className="flex flex-1 flex-col p-4">
+        {/* Video display area */}
+        <div className="relative flex flex-1 items-center justify-center rounded-lg bg-gray-900">
+          <VideoDisplay isCameraOn={isCameraOn}>
+            <video ref={videoRef} id="localvideo" autoPlay playsInline />
+          </VideoDisplay>
+        </div>
+      </div>
+
+      {/* Control bar - can be extended with additional controls later */}
+      <div className="flex h-16 items-center justify-center border-t border-gray-800 bg-gray-950 px-4">
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  disabled={disableCamera}
+                  variant={isCameraOn ? "default" : "outline"}
+                  size="icon"
+                  className={`rounded-full ${
+                    isCameraOn
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "border-gray-700 bg-gray-900 hover:bg-gray-800"
+                  }`}
+                  onClick={toggleCamera}
+                >
+                  {isCameraOn ? (
+                    <Video className="h-5 w-5 text-white" />
+                  ) : (
+                    <VideoOff className="h-5 w-5 text-gray-300" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                {isCameraOn ? "Turn off camera" : "Turn on camera"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
     </div>
   );
 }

@@ -229,18 +229,15 @@ function App() {
     );
   };
 
-  useEffect(() => {
-    const socket = io("http://localhost:4000/mediasoup");
+  // useEffect(() => {
+  //   const socket = io("http://localhost:4000/mediasoup");
 
-    setSocket(socket);
-    socket.on("connection-success", (data) => {
-      console.log(data);
-      // startCamera();
-    });
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+  //   setSocket(socket);
+  //   socket.on("connection-success", (data) => {
+  //     console.log(data);
+  //     // startCamera();
+  //   });
+  // }, []);
 
   return (
     <div>
