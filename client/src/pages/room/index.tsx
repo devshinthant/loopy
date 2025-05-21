@@ -8,30 +8,32 @@ import {
 } from "@/components/ui/tooltip";
 import { Video, VideoOff } from "lucide-react";
 import { VideoDisplay } from "./components/VideoDisplay";
-import useSocketStore from "@/store/socket";
 import { redirect, useParams } from "react-router";
 import type {
+  AppData,
+  ConsumerOptions,
   DtlsParameters,
   IceCandidate,
   IceParameters,
   RtpCapabilities,
-  RtpParameters,
 } from "mediasoup-client/types";
 import { Device } from "mediasoup-client";
 import useRoomStore from "@/store/room";
 import useTransportsStore from "@/store/transports";
 import useProducersStore from "@/store/producers";
+import { socket } from "@/lib/socket";
 
 export default function Room() {
   const params = useParams();
   const roomId = params.roomId as string;
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const remoteRef = useRef<HTMLVideoElement>(null);
 
   const { setRtpCapabilities, setDevice, device, rtpCapabilities } =
     useRoomStore();
-  const { socket } = useSocketStore();
-  const { setProduceTransport, setReceiveTransport } = useTransportsStore();
+  const { setProduceTransport, setReceiveTransport, receiveTransport } =
+    useTransportsStore();
   const { setVideoProducer } = useProducersStore();
 
   const [videoConf, setVideoConf] = useState({
@@ -47,7 +49,7 @@ export default function Room() {
   const [disableCamera, setDisableCamera] = useState(true);
 
   const toggleCamera = async () => {
-    if (!socket || !device) return;
+    if (!device) return;
     setIsCameraOn(!isCameraOn);
 
     try {
@@ -128,7 +130,7 @@ export default function Room() {
 
   /* Load Router Setup */
   useEffect(() => {
-    if (!socket || !roomId) return;
+    if (!roomId) return;
     socket.emit(
       "getRouterRtpCapabilities",
       { roomId },
@@ -148,14 +150,16 @@ export default function Room() {
           });
           setDevice(device);
           setDisableCamera(false);
+          console.log({ device }, "DEVICE");
+          console.log({ rtpCapabilities }, "RTP CAPABILITIES");
         }
       }
     );
-  }, [roomId, socket, setRtpCapabilities, setDevice]);
+  }, [roomId, setRtpCapabilities, setDevice]);
 
   /* Create Receive Transport */
   useEffect(() => {
-    if (!socket || !roomId || !device) return;
+    if (!roomId || !device) return;
 
     socket.emit(
       "createTransport",
@@ -195,13 +199,61 @@ export default function Room() {
         });
       }
     );
-  }, [socket, roomId, device, setReceiveTransport, rtpCapabilities]);
+  }, [roomId, device, setReceiveTransport, rtpCapabilities]);
 
+  /* Consume Producers */
   useEffect(() => {
-    socket?.on("WTF", (data) => {
-      console.log("Received producers from server:", data);
-    });
-  }, [socket, roomId, device]);
+    if (!device) return;
+    socket.emit(
+      "getOtherProducers",
+      { roomId },
+      async ({
+        producers,
+        message,
+      }: {
+        producers: string[];
+        message?: string;
+      }) => {
+        if (message) {
+          console.log(message);
+        }
+
+        if (!producers.length) return;
+
+        producers.forEach((producerId) => {
+          socket.emit(
+            "consumeProducer",
+            {
+              rtpCapabilities,
+              roomId,
+              producerId,
+              kind: "video",
+            },
+            async (consumer: ConsumerOptions<AppData> & { error?: string }) => {
+              if (consumer.error) {
+                return console.log(consumer.error);
+              }
+              const localConsumer = await receiveTransport?.consume(consumer);
+              if (localConsumer) {
+                const { track } = localConsumer;
+
+                if (remoteRef.current) {
+                  remoteRef.current.srcObject = new MediaStream([track]);
+                }
+
+                console.log({ track });
+
+                // socket.emit("resumePausedConsumer", {
+                //   producerId,
+                //   roomId,
+                // });
+              }
+            }
+          );
+        });
+      }
+    );
+  }, [roomId, rtpCapabilities, receiveTransport, device]);
 
   if (!roomId) {
     redirect("/setup");
@@ -210,9 +262,11 @@ export default function Room() {
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden">
+      <video ref={remoteRef} id="remotevideo" autoPlay playsInline />
       {/* Main content area - can be extended with additional elements later */}
       <div className="flex flex-1 flex-col p-4">
         {/* Video display area */}
+
         <div className="relative flex flex-1 items-center justify-center rounded-lg bg-gray-900">
           <VideoDisplay isCameraOn={isCameraOn}>
             <video ref={videoRef} id="localvideo" autoPlay playsInline />

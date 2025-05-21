@@ -26,8 +26,6 @@ peers.on("connection", async (socket) => {
     socketId: socket.id,
   });
 
-  socket.emit("WTF", ["HEHE"]);
-
   socket.on("disconnect", () => {
     console.log("Client disconnected", socket.id);
   });
@@ -36,12 +34,18 @@ peers.on("connection", async (socket) => {
     "createRoom",
     async (
       { roomId, password },
-      callback: ({ message }: { message: string }) => void
+      callback: ({
+        message,
+        error,
+      }: {
+        message?: string;
+        error?: string;
+      }) => void
     ) => {
       const room = rooms.get(roomId);
       if (room) {
         return callback({
-          message: "Room already existed",
+          error: "Room already existed",
         });
       }
 
@@ -60,15 +64,11 @@ peers.on("connection", async (socket) => {
       callback({
         message: "Room created",
       });
-
-      socket.emit("WTF", ["HEHE"]);
     }
   );
 
   socket.on("joinRoom", ({ roomId, password }, callback) => {
     const room = rooms.get(roomId);
-
-    console.log("INTO");
 
     if (!room) {
       return callback({
@@ -76,38 +76,34 @@ peers.on("connection", async (socket) => {
       });
     }
 
-    console.log("STEP 1");
-
     if (room.password !== password) {
       return callback({ error: "Invalid password" });
     }
 
-    console.log("STEP 2");
-
     room.addPeer(socket);
+    callback({
+      message: "Joined room",
+    });
+  });
 
-    console.log("STEP 3");
+  socket.on("getOtherProducers", ({ roomId }, callback) => {
+    const room = rooms.get(roomId);
+    if (!room) return callback({ message: "Room not found" });
 
     /* Get Existing Producers */
     const peers = room.getPeers();
-    console.log({ peers });
+    if (!peers) return callback({ message: "No peers found" });
 
-    console.log("STEP 4");
-
-    if (!peers) return;
     const producers = Array.from(peers)
       .filter(([peerId, peer]) => {
         return peerId !== socket.id;
       })
-      .map(([peerId]) => peerId);
-
-    console.log({ producers }, "PRODUCERS FROM SERVER");
-
-    // Emit to all clients in the room, including the new joiner
-    socket.emit("lee", { producers });
+      .map(([peerId, peer]) => [peer.audioProducer?.id, peer.videoProducer?.id])
+      .flat()
+      .filter(Boolean);
 
     callback({
-      message: "Joined room",
+      producers,
     });
   });
 
@@ -245,7 +241,7 @@ peers.on("connection", async (socket) => {
   );
 
   socket.on(
-    "consumeMedia",
+    "consumeProducer",
     async ({ rtpCapabilities, roomId, producerId, kind }, callback) => {
       try {
         if (!producerId) {
@@ -268,7 +264,19 @@ peers.on("connection", async (socket) => {
           });
         }
 
-        if (!router.canConsume({ producerId, rtpCapabilities })) {
+        console.log(
+          router.canConsume({
+            producerId,
+            rtpCapabilities,
+          })
+        );
+
+        if (
+          !router.canConsume({
+            producerId,
+            rtpCapabilities,
+          })
+        ) {
           return callback({
             error: "Cannot consume media",
           });
@@ -291,7 +299,7 @@ peers.on("connection", async (socket) => {
         const consumer = await transport.consume({
           producerId,
           rtpCapabilities,
-          paused: kind === "video",
+          // paused: kind === "video",
         });
 
         peer.addConsumer(producerId, consumer);
@@ -322,14 +330,14 @@ peers.on("connection", async (socket) => {
     }
   );
 
-  socket.on("resumePausedConsumer", async ({ consumerId, roomId }) => {
+  socket.on("resumePausedConsumer", async ({ producerId, roomId }) => {
     const room = rooms.get(roomId);
     if (!room) return;
 
     const peer = room.getPeer(socket);
     if (!peer) return;
 
-    await peer.consumers?.get(consumerId)?.resume();
+    await peer.consumers?.get(producerId)?.resume();
     console.log("Consumer resumed");
   });
 });

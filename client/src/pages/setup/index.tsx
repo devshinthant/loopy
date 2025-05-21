@@ -22,12 +22,6 @@ import { useEffect } from "react";
 
 import { useNavigate } from "react-router";
 
-import { io } from "socket.io-client";
-import type {
-  DtlsParameters,
-  IceCandidate,
-  IceParameters,
-} from "mediasoup-client/types";
 import { socket } from "@/lib/socket";
 
 const roomSchema = z.object({
@@ -57,7 +51,10 @@ export default function Setup() {
         roomId: values.roomName,
         password: values.password,
       },
-      (data: { message: string }) => {
+      (data: { message: string; error: string }) => {
+        if (data.error) {
+          return console.log(data.error);
+        }
         if (data.message) {
           console.log(data.message);
         }
@@ -69,10 +66,6 @@ export default function Setup() {
   function onCreateRoom() {
     if (Object.keys(form.formState.errors).length > 0) {
       return console.log("Invalid form", form.formState.errors);
-    }
-
-    if (!socket) {
-      return console.log("Socket not connected");
     }
 
     const values = form.getValues();
@@ -87,25 +80,22 @@ export default function Setup() {
         if (data.error) {
           return console.log(data.error);
         }
+        if (data.message) {
+          console.log(data.message);
+        }
         navigate(`/room/${values.roomName}`);
       }
     );
   }
 
   useEffect(() => {
-    const socket = io("http://localhost:4000/mediasoup");
-
     socket.on("connection-success", (data) => {
       console.log(data);
     });
 
-    socket.on("WTF", (data) => {
-      console.log(data);
+    socket.on("disconnect", () => {
+      console.log("Disconnected");
     });
-
-    // return () => {
-    //   socket.disconnect();
-    // };
   }, []);
 
   return (
