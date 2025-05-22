@@ -199,6 +199,12 @@ peers.on("connection", async (socket) => {
         });
 
         callback({ id: producer.id });
+
+        socket.broadcast.emit("new-producer", {
+          producerId: producer.id,
+          kind: producer.kind,
+          rtpParameters: producer.rtpParameters,
+        });
       } catch (error) {
         callback({
           params: {
@@ -263,6 +269,9 @@ peers.on("connection", async (socket) => {
             error: "Router not found",
           });
         }
+
+        console.log(room.getPeers());
+        console.log(producerId, rtpCapabilities);
 
         console.log(
           router.canConsume({

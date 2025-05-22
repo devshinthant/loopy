@@ -7,7 +7,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Video, VideoOff } from "lucide-react";
-import { VideoDisplay } from "./components/VideoDisplay";
 import { redirect, useParams } from "react-router";
 import type {
   AppData,
@@ -128,81 +127,50 @@ export default function Room() {
     }
   };
 
-  /* Load Router Setup */
-  useEffect(() => {
-    if (!roomId) return;
-    socket.emit(
-      "getRouterRtpCapabilities",
-      { roomId },
-      ({
-        error,
-        rtpCapabilities,
-      }: {
-        error: string;
-        rtpCapabilities: RtpCapabilities;
-      }) => {
-        if (!error) {
-          setRtpCapabilities(rtpCapabilities);
+  // const createReceiveTransport = useCallback(() => {
+  //   if (!roomId || !device) return;
 
-          const device = new Device();
-          device.load({
-            routerRtpCapabilities: rtpCapabilities,
-          });
-          setDevice(device);
-          setDisableCamera(false);
-          console.log({ device }, "DEVICE");
-          console.log({ rtpCapabilities }, "RTP CAPABILITIES");
-        }
-      }
-    );
-  }, [roomId, setRtpCapabilities, setDevice]);
+  //   socket.emit(
+  //     "createTransport",
+  //     { sender: false, roomId },
+  //     (params: {
+  //       id: string;
+  //       iceParameters: IceParameters;
+  //       iceCandidates: IceCandidate[];
+  //       dtlsParameters: DtlsParameters;
+  //       error: string;
+  //     }) => {
+  //       if (params.error) {
+  //         return console.log(params.error);
+  //       }
 
-  /* Create Receive Transport */
-  useEffect(() => {
-    if (!roomId || !device) return;
+  //       const transport = device.createRecvTransport(params);
+  //       setReceiveTransport(transport);
 
-    socket.emit(
-      "createTransport",
-      { sender: false, roomId },
-      (params: {
-        id: string;
-        iceParameters: IceParameters;
-        iceCandidates: IceCandidate[];
-        dtlsParameters: DtlsParameters;
-        error: string;
-      }) => {
-        if (params.error) {
-          return console.log(params.error);
-        }
+  //       transport.on("connect", ({ dtlsParameters }, callback, errorBack) => {
+  //         try {
+  //           socket.emit(
+  //             "connectConsumerTransport",
+  //             {
+  //               dtlsParameters,
+  //               roomId,
+  //             },
+  //             (params: { message: string }) => {
+  //               if (params.message) {
+  //                 console.log(params.message);
+  //               }
+  //             }
+  //           );
+  //           callback();
+  //         } catch (error) {
+  //           errorBack(error as Error);
+  //         }
+  //       });
+  //     }
+  //   );
+  // }, [roomId, device, setReceiveTransport]);
 
-        const transport = device.createRecvTransport(params);
-        setReceiveTransport(transport);
-
-        transport.on("connect", ({ dtlsParameters }, callback, errorBack) => {
-          try {
-            socket.emit(
-              "connectConsumerTransport",
-              {
-                dtlsParameters,
-                roomId,
-              },
-              (params: { message: string }) => {
-                if (params.message) {
-                  console.log(params.message);
-                }
-              }
-            );
-            callback();
-          } catch (error) {
-            errorBack(error as Error);
-          }
-        });
-      }
-    );
-  }, [roomId, device, setReceiveTransport, rtpCapabilities]);
-
-  /* Consume Producers */
-  useEffect(() => {
+  const consumeMedia = () => {
     if (!device) return;
     socket.emit(
       "getOtherProducers",
@@ -253,7 +221,143 @@ export default function Room() {
         });
       }
     );
-  }, [roomId, rtpCapabilities, receiveTransport, device]);
+  };
+
+  /* Load Router Setup */
+  useEffect(() => {
+    if (!roomId) return;
+    socket.emit(
+      "getRouterRtpCapabilities",
+      { roomId },
+      async ({
+        error,
+        rtpCapabilities,
+      }: {
+        error: string;
+        rtpCapabilities: RtpCapabilities;
+      }) => {
+        if (!error) {
+          setRtpCapabilities(rtpCapabilities);
+
+          const device = new Device();
+          await device.load({
+            routerRtpCapabilities: rtpCapabilities,
+          });
+          setDevice(device);
+          setDisableCamera(false);
+
+          socket.emit(
+            "createTransport",
+            { sender: false, roomId },
+            (params: {
+              id: string;
+              iceParameters: IceParameters;
+              iceCandidates: IceCandidate[];
+              dtlsParameters: DtlsParameters;
+              error: string;
+            }) => {
+              if (params.error) {
+                return console.log(params.error);
+              }
+
+              const transport = device.createRecvTransport(params);
+              setReceiveTransport(transport);
+
+              console.log({ transport }, "Receive Transport Created");
+
+              transport.on(
+                "connect",
+                ({ dtlsParameters }, callback, errorBack) => {
+                  try {
+                    socket.emit(
+                      "connectConsumerTransport",
+                      {
+                        dtlsParameters,
+                        roomId,
+                      },
+                      (params: { message: string }) => {
+                        if (params.message) {
+                          console.log(params.message);
+                        }
+                      }
+                    );
+                    callback();
+                  } catch (error) {
+                    errorBack(error as Error);
+                  }
+                }
+              );
+            }
+          );
+        }
+      }
+    );
+  }, [roomId, setRtpCapabilities, setDevice, setReceiveTransport]);
+
+  useEffect(() => {
+    const handleNewProducer = async ({
+      producerId,
+      kind,
+    }: {
+      producerId: string;
+      kind: string;
+    }) => {
+      console.log("New producer", { producerId, kind });
+
+      // Make sure we have all required components
+      if (!receiveTransport || !rtpCapabilities) {
+        console.log("Waiting for transport or capabilities...");
+        return;
+      }
+
+      try {
+        socket.emit(
+          "consumeProducer",
+          {
+            rtpCapabilities,
+            roomId,
+            producerId,
+            kind,
+          },
+          async (consumer: ConsumerOptions<AppData> & { error?: string }) => {
+            if (consumer.error) {
+              console.error("Consumer error:", consumer.error);
+              return;
+            }
+
+            try {
+              const localConsumer = await receiveTransport.consume(consumer);
+              if (localConsumer) {
+                const { track } = localConsumer;
+
+                if (remoteRef.current) {
+                  remoteRef.current.srcObject = new MediaStream([track]);
+                }
+
+                console.log("Successfully consumed track:", { track });
+
+                // Resume the consumer
+                socket.emit("resumePausedConsumer", {
+                  producerId,
+                  roomId,
+                });
+              }
+            } catch (error) {
+              console.error("Error consuming:", error);
+            }
+          }
+        );
+      } catch (error) {
+        console.error("Error in handleNewProducer:", error);
+      }
+    };
+
+    socket.on("new-producer", handleNewProducer);
+
+    return () => {
+      socket.off("new-producer", handleNewProducer);
+    };
+  }, [receiveTransport, roomId, rtpCapabilities]);
 
   if (!roomId) {
     redirect("/setup");
@@ -263,20 +367,19 @@ export default function Room() {
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden">
       <video ref={remoteRef} id="remotevideo" autoPlay playsInline />
-      {/* Main content area - can be extended with additional elements later */}
-      <div className="flex flex-1 flex-col p-4">
-        {/* Video display area */}
+      <video ref={videoRef} id="localvideo" autoPlay playsInline />
 
-        <div className="relative flex flex-1 items-center justify-center rounded-lg bg-gray-900">
-          <VideoDisplay isCameraOn={isCameraOn}>
-            <video ref={videoRef} id="localvideo" autoPlay playsInline />
-          </VideoDisplay>
-        </div>
-      </div>
+      {/* Main content area - can be extended with additional elements later */}
 
       {/* Control bar - can be extended with additional controls later */}
       <div className="flex h-16 items-center justify-center border-t border-gray-800 bg-gray-950 px-4">
         <div className="flex items-center gap-2">
+          {/* <Button onClick={createReceiveTransport}>
+            Create Receive Transport
+          </Button> */}
+
+          <Button onClick={consumeMedia}> Consume Media </Button>
+
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
