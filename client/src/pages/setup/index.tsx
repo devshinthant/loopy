@@ -58,7 +58,11 @@ export default function Setup() {
         if (data.message) {
           console.log(data.message);
         }
-        navigate(`/room/${values.roomName}`);
+        navigate(`/room/${values.roomName}`, {
+          state: {
+            type: "joim",
+          },
+        });
       }
     );
   }
@@ -83,7 +87,11 @@ export default function Setup() {
         if (data.message) {
           console.log(data.message);
         }
-        navigate(`/room/${values.roomName}`);
+        navigate(`/room/${values.roomName}`, {
+          state: {
+            type: "create",
+          },
+        });
       }
     );
   }

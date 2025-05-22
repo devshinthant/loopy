@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Video, VideoOff } from "lucide-react";
-import { redirect, useParams } from "react-router";
+import { redirect, useLocation, useParams } from "react-router";
 import type {
   AppData,
   ConsumerOptions,
@@ -24,6 +24,9 @@ import { socket } from "@/lib/socket";
 
 export default function Room() {
   const params = useParams();
+
+  const location = useLocation();
+
   const roomId = params.roomId as string;
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -127,49 +130,6 @@ export default function Room() {
     }
   };
 
-  // const createReceiveTransport = useCallback(() => {
-  //   if (!roomId || !device) return;
-
-  //   socket.emit(
-  //     "createTransport",
-  //     { sender: false, roomId },
-  //     (params: {
-  //       id: string;
-  //       iceParameters: IceParameters;
-  //       iceCandidates: IceCandidate[];
-  //       dtlsParameters: DtlsParameters;
-  //       error: string;
-  //     }) => {
-  //       if (params.error) {
-  //         return console.log(params.error);
-  //       }
-
-  //       const transport = device.createRecvTransport(params);
-  //       setReceiveTransport(transport);
-
-  //       transport.on("connect", ({ dtlsParameters }, callback, errorBack) => {
-  //         try {
-  //           socket.emit(
-  //             "connectConsumerTransport",
-  //             {
-  //               dtlsParameters,
-  //               roomId,
-  //             },
-  //             (params: { message: string }) => {
-  //               if (params.message) {
-  //                 console.log(params.message);
-  //               }
-  //             }
-  //           );
-  //           callback();
-  //         } catch (error) {
-  //           errorBack(error as Error);
-  //         }
-  //       });
-  //     }
-  //   );
-  // }, [roomId, device, setReceiveTransport]);
-
   const consumeMedia = () => {
     if (!device) return;
     socket.emit(
@@ -222,6 +182,102 @@ export default function Room() {
       }
     );
   };
+
+  // const createReceiveTransport = useCallback(() => {
+  //   if (!roomId || !device) return;
+
+  //   socket.emit(
+  //     "createTransport",
+  //     { sender: false, roomId },
+  //     (params: {
+  //       id: string;
+  //       iceParameters: IceParameters;
+  //       iceCandidates: IceCandidate[];
+  //       dtlsParameters: DtlsParameters;
+  //       error: string;
+  //     }) => {
+  //       if (params.error) {
+  //         return console.log(params.error);
+  //       }
+
+  //       const transport = device.createRecvTransport(params);
+  //       setReceiveTransport(transport);
+
+  //       transport.on("connect", ({ dtlsParameters }, callback, errorBack) => {
+  //         try {
+  //           socket.emit(
+  //             "connectConsumerTransport",
+  //             {
+  //               dtlsParameters,
+  //               roomId,
+  //             },
+  //             (params: { message: string }) => {
+  //               if (params.message) {
+  //                 console.log(params.message);
+  //               }
+  //             }
+  //           );
+  //           callback();
+  //         } catch (error) {
+  //           errorBack(error as Error);
+  //         }
+  //       });
+  //     }
+  //   );
+  // }, [roomId, device, setReceiveTransport]);
+
+  // const consumeMedia = () => {
+  //   if (!device) return;
+  //   socket.emit(
+  //     "getOtherProducers",
+  //     { roomId },
+  //     async ({
+  //       producers,
+  //       message,
+  //     }: {
+  //       producers: string[];
+  //       message?: string;
+  //     }) => {
+  //       if (message) {
+  //         console.log(message);
+  //       }
+
+  //       if (!producers.length) return;
+
+  //       producers.forEach((producerId) => {
+  //         socket.emit(
+  //           "consumeProducer",
+  //           {
+  //             rtpCapabilities,
+  //             roomId,
+  //             producerId,
+  //             kind: "video",
+  //           },
+  //           async (consumer: ConsumerOptions<AppData> & { error?: string }) => {
+  //             if (consumer.error) {
+  //               return console.log(consumer.error);
+  //             }
+  //             const localConsumer = await receiveTransport?.consume(consumer);
+  //             if (localConsumer) {
+  //               const { track } = localConsumer;
+
+  //               if (remoteRef.current) {
+  //                 remoteRef.current.srcObject = new MediaStream([track]);
+  //               }
+
+  //               console.log({ track });
+
+  //               // socket.emit("resumePausedConsumer", {
+  //               //   producerId,
+  //               //   roomId,
+  //               // });
+  //             }
+  //           }
+  //         );
+  //       });
+  //     }
+  //   );
+  // };
 
   /* Load Router Setup */
   useEffect(() => {
@@ -287,6 +343,10 @@ export default function Room() {
                   }
                 }
               );
+
+              socket.emit("giveMeOthers", {
+                roomId,
+              });
             }
           );
         }
@@ -294,6 +354,7 @@ export default function Room() {
     );
   }, [roomId, setRtpCapabilities, setDevice, setReceiveTransport]);
 
+  /* Listen for new producer */
   useEffect(() => {
     const handleNewProducer = async ({
       producerId,
@@ -359,6 +420,77 @@ export default function Room() {
     };
   }, [receiveTransport, roomId, rtpCapabilities]);
 
+  /* Get Initial Producers */
+  useEffect(() => {
+    if (location.state.type === "create") return;
+    if (!device || !rtpCapabilities || !receiveTransport) return;
+    const handleNewProducer = ({
+      producerId,
+      kind,
+    }: {
+      producerId: string;
+      kind: string;
+    }) => {
+      // Make sure we have all required components
+      if (!receiveTransport || !rtpCapabilities) {
+        console.log("Waiting for transport or capabilities...");
+        return;
+      }
+
+      try {
+        socket.emit(
+          "consumeProducer",
+          {
+            rtpCapabilities,
+            roomId,
+            producerId,
+            kind,
+          },
+          async (consumer: ConsumerOptions<AppData> & { error?: string }) => {
+            if (consumer.error) {
+              console.error("Consumer error:", consumer.error);
+              return;
+            }
+
+            try {
+              const localConsumer = await receiveTransport.consume(consumer);
+              if (localConsumer) {
+                const { track } = localConsumer;
+
+                if (remoteRef.current) {
+                  remoteRef.current.srcObject = new MediaStream([track]);
+                }
+
+                console.log("Successfully consumed track:", { track });
+
+                // Resume the consumer
+                socket.emit("resumePausedConsumer", {
+                  producerId,
+                  roomId,
+                });
+              }
+            } catch (error) {
+              console.error("Error consuming:", error);
+            }
+          }
+        );
+      } catch (error) {
+        console.error("Error in handleNewProducer:", error);
+      }
+    };
+
+    socket.on("getOtherProducers", ({ producers }: { producers: string[] }) => {
+      console.log({ producers }, "initial producers");
+      producers.forEach((producerId) => {
+        handleNewProducer({ producerId, kind: "video" });
+      });
+    });
+
+    return () => {
+      socket.off("getOtherProducers", handleNewProducer);
+    };
+  }, [device, rtpCapabilities, receiveTransport, roomId, location.state.type]);
+
   if (!roomId) {
     redirect("/setup");
     return <div>Room not found</div>;
@@ -378,7 +510,7 @@ export default function Room() {
             Create Receive Transport
           </Button> */}
 
-          <Button onClick={consumeMedia}> Consume Media </Button>
+          <Button onClick={consumeMedia}>Consume Media</Button>
 
           <TooltipProvider>
             <Tooltip>

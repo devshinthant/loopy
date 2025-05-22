@@ -86,7 +86,7 @@ peers.on("connection", async (socket) => {
     });
   });
 
-  socket.on("getOtherProducers", ({ roomId }, callback) => {
+  socket.on("giveMeOthers", ({ roomId }, callback) => {
     const room = rooms.get(roomId);
     if (!room) return callback({ message: "Room not found" });
 
@@ -102,7 +102,7 @@ peers.on("connection", async (socket) => {
       .flat()
       .filter(Boolean);
 
-    callback({
+    socket.emit("getOtherProducers", {
       producers,
     });
   });
