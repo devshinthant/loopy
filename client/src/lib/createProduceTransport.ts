@@ -1,32 +1,20 @@
-import type {
-  AppData,
-  Device,
-  DtlsParameters,
-  Producer,
-  ProducerOptions,
-  Transport,
-} from "mediasoup-client/types";
+import type { Device, DtlsParameters, Transport } from "mediasoup-client/types";
 
 import type { IceCandidate } from "mediasoup-client/types";
 
 import type { IceParameters } from "mediasoup-client/types";
 import { socket } from "./socket";
-import produceTransport from "./produceTransport";
 
 interface CreateProduceTransportProps {
   device: Device;
   roomId: string;
   setProduceTransport: (transport: Transport) => void;
-  setVideoProducer: (producer: Producer) => void;
-  videoConfig: ProducerOptions<AppData>;
 }
 
 const createProduceTransport = ({
   roomId,
   device,
   setProduceTransport,
-  setVideoProducer,
-  videoConfig,
 }: CreateProduceTransportProps) => {
   socket.emit(
     "createTransport",
@@ -44,6 +32,7 @@ const createProduceTransport = ({
       }
 
       const transport = device.createSendTransport(params);
+      console.log({ transport }, "Produce Transport Created");
       setProduceTransport(transport);
 
       transport.on(
@@ -76,12 +65,6 @@ const createProduceTransport = ({
         } catch (error) {
           errorBack(error as Error);
         }
-      });
-
-      await produceTransport({
-        transport,
-        videoConfig,
-        setVideoProducer,
       });
     }
   );

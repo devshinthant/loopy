@@ -1,6 +1,3 @@
-import type { DtlsParameters } from "mediasoup-client/types";
-import type { IceCandidate } from "mediasoup-client/types";
-import type { IceParameters } from "mediasoup-client/types";
 import { Device } from "mediasoup-client";
 import type {
   Device as DeviceType,
@@ -8,19 +5,33 @@ import type {
   Transport,
 } from "mediasoup-client/types";
 import { socket } from "./socket";
+import createReceiveTransport from "./createReceiveTransport";
+import createProduceTransport from "./createProduceTransport";
 
 interface SetUpRouter {
   roomId: string;
   setRtpCapabilities: (rtpCapabilities: RtpCapabilities) => void;
   setDevice: (device: DeviceType) => void;
   setReceiveTransport: (receiveTransport: Transport) => void;
+  setProduceTransport: (produceTransport: Transport) => void;
 }
+
+/**
+ * This function is used to set up the router and the transports.
+ * It is called when the user enters a room.
+ * It emits a request to the server to get the router's RTP capabilities.
+ * Once the RTP capabilities are received, it creates a new Device.
+ * It then creates a new produce transport and a new receive transport.
+ *
+ * @param param0
+ */
 
 const setUpRouter = ({
   roomId,
   setDevice,
   setRtpCapabilities,
   setReceiveTransport,
+  setProduceTransport,
 }: SetUpRouter) => {
   socket.emit(
     "getRouterRtpCapabilities",
@@ -41,53 +52,17 @@ const setUpRouter = ({
         });
         setDevice(device);
 
-        socket.emit(
-          "createTransport",
-          { sender: false, roomId },
-          (params: {
-            id: string;
-            iceParameters: IceParameters;
-            iceCandidates: IceCandidate[];
-            dtlsParameters: DtlsParameters;
-            error: string;
-          }) => {
-            if (params.error) {
-              return console.log(params.error);
-            }
+        createProduceTransport({
+          roomId,
+          device,
+          setProduceTransport,
+        });
 
-            const transport = device.createRecvTransport(params);
-            setReceiveTransport(transport);
-
-            console.log({ transport }, "Receive Transport Created");
-
-            transport.on(
-              "connect",
-              ({ dtlsParameters }, callback, errorBack) => {
-                try {
-                  socket.emit(
-                    "connectConsumerTransport",
-                    {
-                      dtlsParameters,
-                      roomId,
-                    },
-                    (params: { message: string }) => {
-                      if (params.message) {
-                        console.log(params.message);
-                      }
-                    }
-                  );
-                  callback();
-                } catch (error) {
-                  errorBack(error as Error);
-                }
-              }
-            );
-
-            socket.emit("giveMeOthers", {
-              roomId,
-            });
-          }
-        );
+        createReceiveTransport({
+          roomId,
+          device,
+          setReceiveTransport,
+        });
       }
     }
   );

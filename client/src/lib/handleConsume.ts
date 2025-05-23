@@ -1,28 +1,32 @@
 import type {
   AppData,
+  Consumer,
   ConsumerOptions,
   RtpCapabilities,
   Transport,
 } from "mediasoup-client/types";
 import { socket } from "./socket";
+import consume from "./consume";
 
-interface HandleProducerProps {
+interface HandleConsumeProps {
   roomId: string;
   producerId: string;
   kind: string;
   receiveTransport: Transport | null;
   rtpCapabilities: RtpCapabilities | null;
   callback: (track: MediaStreamTrack) => void;
+  addConsumer: (consumer: Consumer) => void;
 }
 
-const handleProducer = ({
+const handleConsume = ({
   roomId,
   producerId,
   kind,
   receiveTransport,
   rtpCapabilities,
   callback,
-}: HandleProducerProps) => {
+  addConsumer,
+}: HandleConsumeProps) => {
   if (!receiveTransport || !rtpCapabilities) {
     return console.log("Waiting for transport or capabilities...");
   }
@@ -40,8 +44,13 @@ const handleProducer = ({
           return console.error("Consumer error:", consumer.error);
         }
 
+        const localConsumer = await consume({
+          receiveTransport,
+          consumer,
+          addConsumer,
+        });
+
         try {
-          const localConsumer = await receiveTransport.consume(consumer);
           if (localConsumer) {
             const { track } = localConsumer;
 
@@ -64,4 +73,4 @@ const handleProducer = ({
   }
 };
 
-export default handleProducer;
+export default handleConsume;

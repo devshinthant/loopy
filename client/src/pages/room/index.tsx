@@ -12,9 +12,9 @@ import useRoomStore from "@/store/room";
 import useTransportsStore from "@/store/transports";
 import useProducersStore from "@/store/producers";
 import { socket } from "@/lib/socket";
-import handleProducer from "@/lib/handleProducer";
-import setUpRouter from "@/lib/setUpRouter";
-import createProduceTransport from "@/lib/createProduceTransport";
+import handleProducer from "@/lib/handleConsume";
+import produce from "@/lib/produce";
+import useConsumersStore from "@/store/consumers";
 
 export default function Room() {
   const params = useParams();
@@ -24,13 +24,15 @@ export default function Room() {
   const roomId = params.roomId as string;
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const remoteRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
-  const { setRtpCapabilities, setDevice, device, rtpCapabilities } =
-    useRoomStore();
-  const { setProduceTransport, setReceiveTransport, receiveTransport } =
-    useTransportsStore();
+  const remoteRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+
+  const { device, rtpCapabilities } = useRoomStore();
+  const { receiveTransport, produceTransport } = useTransportsStore();
   const { setVideoProducer } = useProducersStore();
+  const { addConsumer } = useConsumersStore();
 
   const [videoConf, setVideoConf] = useState({
     encoding: [
@@ -42,52 +44,31 @@ export default function Room() {
   });
 
   const [isCameraOn, setIsCameraOn] = useState(false);
-  const [disableCamera, setDisableCamera] = useState(false);
+  const [disableCamera] = useState(false);
 
   const toggleCamera = async () => {
-    if (!device) return;
+    if (!device || !produceTransport) return;
     setIsCameraOn(!isCameraOn);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      let closureVideoConf;
+      let tempVideoConf;
       if (videoRef.current) {
         const track = stream.getVideoTracks()[0];
         videoRef.current.srcObject = stream;
-        closureVideoConf = { ...videoConf, track };
+        tempVideoConf = { ...videoConf, track };
         setVideoConf((current) => ({ ...current, track }));
+
+        await produce({
+          transport: produceTransport,
+          trackConfig: tempVideoConf,
+          setProducer: setVideoProducer,
+        });
       }
-
-      if (!closureVideoConf) return;
-
-      createProduceTransport({
-        roomId,
-        device,
-        setProduceTransport,
-        setVideoProducer,
-        videoConfig: closureVideoConf,
-      });
     } catch (error) {
       console.error(error);
     }
   };
-
-  /* Load Router Setup */
-  useEffect(() => {
-    if (!roomId) return;
-    setUpRouter({
-      roomId,
-      setRtpCapabilities,
-      setDevice,
-      setReceiveTransport,
-    });
-  }, [
-    roomId,
-    setRtpCapabilities,
-    setDevice,
-    setReceiveTransport,
-    setDisableCamera,
-  ]);
 
   /* Listen for new producer */
   useEffect(() => {
@@ -104,6 +85,7 @@ export default function Room() {
         kind,
         receiveTransport,
         rtpCapabilities,
+        addConsumer,
         callback: (track) => {
           if (remoteRef.current) {
             remoteRef.current.srcObject = new MediaStream([track]);
@@ -117,7 +99,7 @@ export default function Room() {
     return () => {
       socket.off("new-producer", onNewProducer);
     };
-  }, [receiveTransport, roomId, rtpCapabilities]);
+  }, [receiveTransport, roomId, rtpCapabilities, addConsumer]);
 
   /* Get Initial Producers */
   useEffect(() => {
@@ -137,6 +119,7 @@ export default function Room() {
           kind: "video",
           receiveTransport,
           rtpCapabilities,
+          addConsumer,
           callback: (track) => {
             if (remoteRef.current) {
               remoteRef.current.srcObject = new MediaStream([track]);
@@ -150,7 +133,14 @@ export default function Room() {
     return () => {
       socket.off("getOtherProducers", handleGetOtherProducers);
     };
-  }, [device, rtpCapabilities, receiveTransport, roomId, location.state.type]);
+  }, [
+    device,
+    rtpCapabilities,
+    receiveTransport,
+    roomId,
+    location.state.type,
+    addConsumer,
+  ]);
 
   if (!roomId) {
     redirect("/setup");
@@ -161,6 +151,9 @@ export default function Room() {
     <div className="flex h-screen w-full flex-col overflow-hidden">
       <video ref={remoteRef} id="remotevideo" autoPlay playsInline />
       <video ref={videoRef} id="localvideo" autoPlay playsInline />
+
+      <audio ref={remoteAudioRef} autoPlay playsInline />
+      <audio ref={audioRef} autoPlay playsInline />
 
       {/* Main content area - can be extended with additional elements later */}
 

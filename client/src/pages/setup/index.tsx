@@ -23,6 +23,9 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 
 import { socket } from "@/lib/socket";
+import setUpRouter from "@/lib/setUpRouter";
+import useRoomStore from "@/store/room";
+import useTransportsStore from "@/store/transports";
 
 const roomSchema = z.object({
   roomName: z.string().min(1, {
@@ -35,6 +38,9 @@ const roomSchema = z.object({
 
 export default function Setup() {
   const navigate = useNavigate();
+
+  const { setRtpCapabilities, setDevice } = useRoomStore();
+  const { setReceiveTransport, setProduceTransport } = useTransportsStore();
 
   const form = useForm<z.infer<typeof roomSchema>>({
     resolver: zodResolver(roomSchema),
@@ -58,6 +64,15 @@ export default function Setup() {
         if (data.message) {
           console.log(data.message);
         }
+
+        setUpRouter({
+          roomId: values.roomName,
+          setRtpCapabilities,
+          setDevice,
+          setReceiveTransport,
+          setProduceTransport,
+        });
+
         navigate(`/room/${values.roomName}`, {
           state: {
             type: "joim",
@@ -87,6 +102,15 @@ export default function Setup() {
         if (data.message) {
           console.log(data.message);
         }
+
+        setUpRouter({
+          roomId: values.roomName,
+          setRtpCapabilities,
+          setDevice,
+          setReceiveTransport,
+          setProduceTransport,
+        });
+
         navigate(`/room/${values.roomName}`, {
           state: {
             type: "create",
