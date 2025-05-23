@@ -86,27 +86,6 @@ peers.on("connection", async (socket) => {
     });
   });
 
-  socket.on("giveMeOthers", ({ roomId }, callback) => {
-    const room = rooms.get(roomId);
-    if (!room) return callback({ message: "Room not found" });
-
-    /* Get Existing Producers */
-    const peers = room.getPeers();
-    if (!peers) return callback({ message: "No peers found" });
-
-    const producers = Array.from(peers)
-      .filter(([peerId, peer]) => {
-        return peerId !== socket.id;
-      })
-      .map(([peerId, peer]) => [peer.audioProducer?.id, peer.videoProducer?.id])
-      .flat()
-      .filter(Boolean);
-
-    socket.emit("getOtherProducers", {
-      producers,
-    });
-  });
-
   socket.on("getRouterRtpCapabilities", ({ roomId }, callback) => {
     try {
       if (!roomId) {
@@ -308,7 +287,7 @@ peers.on("connection", async (socket) => {
         const consumer = await transport.consume({
           producerId,
           rtpCapabilities,
-          // paused: kind === "video",
+          paused: kind === "video",
         });
 
         peer.addConsumer(producerId, consumer);
@@ -348,5 +327,26 @@ peers.on("connection", async (socket) => {
 
     await peer.consumers?.get(producerId)?.resume();
     console.log("Consumer resumed");
+  });
+
+  socket.on("giveMeOthers", ({ roomId }, callback) => {
+    const room = rooms.get(roomId);
+    if (!room) return callback({ message: "Room not found" });
+
+    /* Get Existing Producers */
+    const peers = room.getPeers();
+    if (!peers) return callback({ message: "No peers found" });
+
+    const producers = Array.from(peers)
+      .filter(([peerId, peer]) => {
+        return peerId !== socket.id;
+      })
+      .map(([, peer]) => [peer.audioProducer?.id, peer.videoProducer?.id])
+      .flat()
+      .filter(Boolean);
+
+    socket.emit("getOtherProducers", {
+      producers,
+    });
   });
 });
