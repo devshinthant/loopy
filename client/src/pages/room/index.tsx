@@ -479,15 +479,21 @@ export default function Room() {
       }
     };
 
-    socket.on("getOtherProducers", ({ producers }: { producers: string[] }) => {
+    const handleGetOtherProducers = ({
+      producers,
+    }: {
+      producers: string[];
+    }) => {
       console.log({ producers }, "initial producers");
       producers.forEach((producerId) => {
         handleNewProducer({ producerId, kind: "video" });
       });
-    });
+    };
+
+    socket.on("getOtherProducers", handleGetOtherProducers);
 
     return () => {
-      socket.off("getOtherProducers", handleNewProducer);
+      socket.off("getOtherProducers", handleGetOtherProducers);
     };
   }, [device, rtpCapabilities, receiveTransport, roomId, location.state.type]);
 
