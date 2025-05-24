@@ -16,10 +16,15 @@ const produce = async ({
   trackConfig,
   setProducer,
 }: ProduceProps) => {
-  const localProducer = await transport.produce(trackConfig);
-  console.log("Local producer created", localProducer);
-  setProducer(localProducer);
-  return localProducer;
+  try {
+    const localProducer = await transport.produce(trackConfig);
+    console.log("Local producer created", localProducer);
+
+    setProducer(localProducer);
+    return localProducer;
+  } catch (error) {
+    console.log(error, "Producing");
+  }
 };
 
 export default produce;

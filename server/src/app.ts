@@ -349,4 +349,19 @@ peers.on("connection", async (socket) => {
       producers,
     });
   });
+
+  socket.on("producer-paused", ({ producerId, roomId }) => {
+    console.log("server producer-paused", { producerId, roomId });
+    socket.broadcast.emit("peer-producer-paused", {
+      producerId,
+      peerId: socket.id,
+    });
+  });
+
+  socket.on("producer-resumed", ({ producerId, roomId }) => {
+    socket.broadcast.emit("peer-producer-resumed", {
+      producerId,
+      peerId: socket.id,
+    });
+  });
 });
