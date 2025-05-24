@@ -26,6 +26,11 @@ import { socket } from "@/lib/socket";
 import setUpRouter from "@/lib/setUpRouter";
 import useRoomStore from "@/store/room";
 import useTransportsStore from "@/store/transports";
+import cleanUp from "@/lib/cleanUp";
+import useRemoteStreamStore from "@/store/remote-streams";
+import useLocalStreamStore from "@/store/local-streams";
+import useConsumersStore from "@/store/consumers";
+import useProducersStore from "@/store/producers";
 
 const roomSchema = z.object({
   roomName: z.string().min(1, {
@@ -40,7 +45,17 @@ export default function Setup() {
   const navigate = useNavigate();
 
   const { setRtpCapabilities, setDevice } = useRoomStore();
-  const { setReceiveTransport, setProduceTransport } = useTransportsStore();
+  const {
+    setReceiveTransport,
+    setProduceTransport,
+    produceTransport,
+    receiveTransport,
+  } = useTransportsStore();
+  const { resetProduceTransport, resetReceiveTransport } = useTransportsStore();
+  const { resetLocalVideoStream, localVideoStream } = useLocalStreamStore();
+  const { resetRemoteStreams, remoteStreams } = useRemoteStreamStore();
+  const { resetVideoProducer, videoProducer } = useProducersStore();
+  const { resetConsumers, consumers } = useConsumersStore();
 
   const form = useForm<z.infer<typeof roomSchema>>({
     resolver: zodResolver(roomSchema),
@@ -124,10 +139,36 @@ export default function Setup() {
     socket.on("connection-success", (data) => {
       console.log(data);
     });
+  }, []);
 
+  useEffect(() => {
     socket.on("disconnect", () => {
       console.log("Disconnected");
+      if (
+        !produceTransport ||
+        !receiveTransport ||
+        !localVideoStream ||
+        !remoteStreams ||
+        !videoProducer
+      )
+        return;
+
+      cleanUp({
+        produceTransport,
+        resetProduceTransport,
+        receiveTransport,
+        resetReceiveTransport,
+        localVideoStream,
+        resetLocalVideoStream,
+        remoteStreams,
+        resetRemoteStreams,
+        videoProducer,
+        resetVideoProducer,
+        consumers,
+        resetConsumers,
+      });
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

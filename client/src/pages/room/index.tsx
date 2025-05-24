@@ -6,8 +6,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Video, VideoOff } from "lucide-react";
-import { redirect, useLocation, useParams } from "react-router";
+import { LogOut, Video, VideoOff } from "lucide-react";
+import { redirect, useLocation, useNavigate, useParams } from "react-router";
 import useRoomStore from "@/store/room";
 import useTransportsStore from "@/store/transports";
 import useProducersStore from "@/store/producers";
@@ -17,9 +17,11 @@ import produce from "@/lib/produce";
 import useConsumersStore from "@/store/consumers";
 import useLocalStreamStore from "@/store/local-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
+import cleanUp from "@/lib/cleanUp";
 
 export default function Room() {
   const params = useParams();
+  const navigate = useNavigate();
 
   const location = useLocation();
 
@@ -33,22 +35,31 @@ export default function Room() {
   const { device, rtpCapabilities } = useRoomStore();
 
   /* Transports */
-  const { receiveTransport, produceTransport } = useTransportsStore();
+  const {
+    receiveTransport,
+    produceTransport,
+    resetProduceTransport,
+    resetReceiveTransport,
+  } = useTransportsStore();
 
   /* Streams */
-  const { setLocalVideoStream, localVideoStream } = useLocalStreamStore();
+  const { setLocalVideoStream, localVideoStream, resetLocalVideoStream } =
+    useLocalStreamStore();
   const {
     remoteStreams,
     addRemoteStream,
     pauseRemoteStream,
     resumeRemoteStream,
+    resetRemoteStreams,
+    removeRemoteStream,
   } = useRemoteStreamStore();
 
   /* Producers */
-  const { setVideoProducer, videoProducer } = useProducersStore();
+  const { setVideoProducer, videoProducer, resetVideoProducer } =
+    useProducersStore();
 
   /* Consumers */
-  const { addConsumer } = useConsumersStore();
+  const { addConsumer, consumers, resetConsumers } = useConsumersStore();
 
   const [videoConf, setVideoConf] = useState({
     encoding: [
@@ -108,35 +119,48 @@ export default function Room() {
     setIsCameraOn(false);
   };
 
-  /* Listen for new producer */
+  /* Listen for producer updates */
   useEffect(() => {
     const onNewProducer = ({
       producerId,
       kind,
+      type,
     }: {
       producerId: string;
       kind: string;
+      type: "add" | "remove";
     }) => {
-      handleConsume({
-        roomId,
-        producerId,
-        kind,
-        receiveTransport,
-        rtpCapabilities,
-        addConsumer,
-        callback: (track) => {
-          const stream = new MediaStream([track]);
-          addRemoteStream({ stream, paused: false, producerId });
-        },
-      });
+      if (type === "add") {
+        handleConsume({
+          roomId,
+          producerId,
+          kind,
+          receiveTransport,
+          rtpCapabilities,
+          addConsumer,
+          callback: (track) => {
+            const stream = new MediaStream([track]);
+            addRemoteStream({ stream, paused: false, producerId });
+          },
+        });
+      } else {
+        removeRemoteStream(producerId);
+      }
     };
 
-    socket.on("new-producer", onNewProducer);
+    socket.on("producer-update", onNewProducer);
 
     return () => {
-      socket.off("new-producer", onNewProducer);
+      socket.off("producer-update", onNewProducer);
     };
-  }, [receiveTransport, roomId, rtpCapabilities, addConsumer, addRemoteStream]);
+  }, [
+    receiveTransport,
+    roomId,
+    rtpCapabilities,
+    addConsumer,
+    addRemoteStream,
+    removeRemoteStream,
+  ]);
 
   /* Get Initial Producers */
   useEffect(() => {
@@ -209,6 +233,48 @@ export default function Room() {
       socket.off("peer-producer-resumed", handlePeerProducerResumed);
     };
   }, [remoteStreams, pauseRemoteStream, resumeRemoteStream]);
+
+  /* End Room */
+  useEffect(() => {
+    const handleEndRoom = () => {
+      navigate("/setup");
+    };
+    socket.on("room-ended", handleEndRoom);
+
+    return () => {
+      socket.off("room-ended", handleEndRoom);
+    };
+  }, [navigate]);
+
+  /* Clean Up */
+  useEffect(() => {
+    return () => {
+      if (
+        !produceTransport ||
+        !receiveTransport ||
+        !localVideoStream ||
+        !remoteStreams ||
+        !videoProducer
+      )
+        return;
+
+      cleanUp({
+        produceTransport,
+        resetProduceTransport,
+        receiveTransport,
+        resetReceiveTransport,
+        localVideoStream,
+        resetLocalVideoStream,
+        remoteStreams,
+        resetRemoteStreams,
+        videoProducer,
+        resetVideoProducer,
+        consumers,
+        resetConsumers,
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!roomId) {
     redirect("/setup");
@@ -288,6 +354,30 @@ export default function Room() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+
+          <Button
+            variant="outline"
+            onClick={() => {
+              alert("hit");
+              socket.emit("end-room", { roomId });
+              navigate("/setup");
+            }}
+          >
+            End Room
+            <LogOut className="h-5 w-5 text-gray-300" />
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => {
+              alert("hit");
+
+              socket.emit("leave-room", { roomId });
+              navigate("/setup");
+            }}
+          >
+            Leave Room
+          </Button>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type RemoteStream = {
+export type RemoteStream = {
   paused: boolean;
   producerId: string;
   stream: MediaStream;
@@ -14,6 +14,7 @@ interface RemoteStreamState {
   pauseRemoteStream: (producerId: string) => void;
   resumeRemoteStream: (producerId: string) => void;
   resetRemoteStreams: () => void;
+  removeRemoteStream: (producerId: string) => void;
 }
 
 const initialState: Omit<
@@ -23,6 +24,7 @@ const initialState: Omit<
   | "addRemoteStream"
   | "pauseRemoteStream"
   | "resumeRemoteStream"
+  | "removeRemoteStream"
 > = {
   remoteStreams: null,
 };
@@ -45,6 +47,12 @@ const useRemoteStreamStore = create<RemoteStreamState>()((set) => ({
     set((state) => ({
       remoteStreams: state.remoteStreams?.map((stream) =>
         stream.producerId === producerId ? { ...stream, paused: false } : stream
+      ),
+    })),
+  removeRemoteStream: (producerId) =>
+    set((state) => ({
+      remoteStreams: state.remoteStreams?.filter(
+        (stream) => stream.producerId !== producerId
       ),
     })),
 }));

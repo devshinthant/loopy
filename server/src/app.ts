@@ -5,6 +5,7 @@ import createWorker from "./worker/createWorker";
 import mediaCodecs from "./config";
 import createTransport from "./transports/createTransport";
 import Room from "./room/room";
+import cleanUp from "./cleanUp";
 
 const io = new Server(server, {
   cors: {
@@ -26,8 +27,18 @@ peers.on("connection", async (socket) => {
     socketId: socket.id,
   });
 
+  socket.on("leave-room", ({ roomId }) => {
+    cleanUp({ socket, roomId });
+  });
+
   socket.on("disconnect", () => {
+    cleanUp({ socket });
+
     console.log("Client disconnected", socket.id);
+  });
+
+  socket.on("end-room", ({ roomId }) => {
+    cleanUp({ socket, roomId, endRoom: true });
   });
 
   socket.on(
@@ -179,10 +190,10 @@ peers.on("connection", async (socket) => {
 
         callback({ id: producer.id });
 
-        socket.broadcast.emit("new-producer", {
+        socket.broadcast.emit("producer-update", {
           producerId: producer.id,
           kind: producer.kind,
-          rtpParameters: producer.rtpParameters,
+          type: "add",
         });
       } catch (error) {
         callback({
