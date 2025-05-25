@@ -6,7 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LogOut, Video, VideoOff } from "lucide-react";
+import { LogOut, Mic, MicOff, Video, VideoOff } from "lucide-react";
 import { redirect, useLocation, useNavigate, useParams } from "react-router";
 import useRoomStore from "@/store/room";
 import useTransportsStore from "@/store/transports";
@@ -18,6 +18,7 @@ import useConsumersStore from "@/store/consumers";
 import useLocalStreamStore from "@/store/local-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
 import cleanUp from "@/lib/cleanUp";
+import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 
 export default function Room() {
   const params = useParams();
@@ -28,9 +29,6 @@ export default function Room() {
   const roomId = params.roomId as string;
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
   const { device, rtpCapabilities } = useRoomStore();
 
@@ -43,8 +41,12 @@ export default function Room() {
   } = useTransportsStore();
 
   /* Streams */
-  const { setLocalVideoStream, localVideoStream, resetLocalVideoStream } =
-    useLocalStreamStore();
+  const {
+    setLocalVideoStream,
+    localVideoStream,
+    resetLocalVideoStream,
+    setLocalAudioStream,
+  } = useLocalStreamStore();
   const {
     remoteStreams,
     addRemoteStream,
@@ -54,9 +56,18 @@ export default function Room() {
     removeRemoteStream,
   } = useRemoteStreamStore();
 
+  /* Remote Audio Streams */
+  const { addRemoteAudioStream, removeRemoteAudioStream, remoteAudioStreams } =
+    useRemoteAudioStreamStore();
+
   /* Producers */
-  const { setVideoProducer, videoProducer, resetVideoProducer } =
-    useProducersStore();
+  const {
+    setVideoProducer,
+    videoProducer,
+    resetVideoProducer,
+    audioProducer,
+    setAudioProducer,
+  } = useProducersStore();
 
   /* Consumers */
   const { addConsumer, consumers, resetConsumers } = useConsumersStore();
@@ -71,8 +82,10 @@ export default function Room() {
   });
 
   const [isCameraOn, setIsCameraOn] = useState(false);
+  const [isMicOn, setIsMicOn] = useState(false);
   const [disableCamera] = useState(false);
 
+  /* Camera */
   const startCamera = async () => {
     if (!produceTransport) return;
     try {
@@ -119,6 +132,35 @@ export default function Room() {
     setIsCameraOn(false);
   };
 
+  /* Mic */
+  const startMic = async () => {
+    if (!produceTransport) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      const track = stream.getAudioTracks()[0];
+      setLocalAudioStream(stream);
+
+      if (audioProducer) {
+        await audioProducer.replaceTrack({ track });
+        audioProducer.resume();
+      }
+
+      setIsMicOn(true);
+
+      if (!audioProducer) {
+        await produce({
+          transport: produceTransport,
+          trackConfig: { track },
+          setProducer: setAudioProducer,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   /* Listen for producer updates */
   useEffect(() => {
     const onNewProducer = ({
@@ -140,11 +182,20 @@ export default function Room() {
           addConsumer,
           callback: (track) => {
             const stream = new MediaStream([track]);
-            addRemoteStream({ stream, paused: false, producerId });
+            if (kind === "video") {
+              addRemoteStream({ stream, paused: false, producerId });
+            } else {
+              console.log("remote audio producer", producerId);
+              addRemoteAudioStream({ stream, paused: false, producerId });
+            }
           },
         });
       } else {
-        removeRemoteStream(producerId);
+        if (kind === "video") {
+          removeRemoteStream(producerId);
+        } else {
+          removeRemoteAudioStream(producerId);
+        }
       }
     };
 
@@ -159,7 +210,9 @@ export default function Room() {
     rtpCapabilities,
     addConsumer,
     addRemoteStream,
+    addRemoteAudioStream,
     removeRemoteStream,
+    removeRemoteAudioStream,
   ]);
 
   /* Get Initial Producers */
@@ -170,10 +223,10 @@ export default function Room() {
     const handleGetOtherProducers = ({
       producers,
     }: {
-      producers: string[];
+      producers: { kind: string; producerId: string }[];
     }) => {
       console.log({ producers }, "initial producers");
-      producers.forEach((producerId) => {
+      producers.forEach(({ kind, producerId }) => {
         handleConsume({
           roomId,
           producerId,
@@ -183,7 +236,11 @@ export default function Room() {
           addConsumer,
           callback: (track) => {
             const stream = new MediaStream([track]);
-            addRemoteStream({ stream, paused: false, producerId });
+            if (kind === "video") {
+              addRemoteStream({ stream, paused: false, producerId });
+            } else {
+              addRemoteAudioStream({ stream, paused: false, producerId });
+            }
           },
         });
       });
@@ -201,6 +258,7 @@ export default function Room() {
     location.state.type,
     addConsumer,
     addRemoteStream,
+    addRemoteAudioStream,
   ]);
 
   /* Handle Pause/Resume */
@@ -285,18 +343,20 @@ export default function Room() {
     <div className="flex  w-full flex-col overflow-hidden">
       {remoteStreams?.map(({ stream, paused }) => (
         <div key={stream.id} style={{ position: "relative" }}>
-          <video
-            ref={(el) => {
-              if (el) el.srcObject = stream;
-            }}
-            autoPlay
-            playsInline
-            muted={false}
-            style={{
-              width: "300px",
-              filter: paused ? "grayscale(100%) brightness(0.5)" : "none",
-            }}
-          />
+          {!paused && (
+            <video
+              ref={(el) => {
+                if (el) el.srcObject = stream;
+              }}
+              autoPlay
+              playsInline
+              muted={false}
+              style={{
+                width: "300px",
+                filter: paused ? "grayscale(100%) brightness(0.5)" : "none",
+              }}
+            />
+          )}
 
           {paused && (
             <div
@@ -322,12 +382,48 @@ export default function Room() {
 
       <video ref={videoRef} id="localvideo" autoPlay playsInline />
 
-      <audio ref={remoteAudioRef} autoPlay playsInline />
-      <audio ref={audioRef} autoPlay playsInline />
+      {remoteAudioStreams?.map(({ stream }) => (
+        <audio
+          key={stream.id}
+          autoPlay
+          controls
+          ref={(el) => {
+            if (el) {
+              el.srcObject = stream;
+            }
+          }}
+        />
+      ))}
 
       {/* Control bar - can be extended with additional controls later */}
       <div className="flex h-16 items-center justify-center border-t border-gray-800 bg-gray-950 px-4">
         <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isMicOn ? "default" : "outline"}
+                  size="icon"
+                  className={`rounded-full ${
+                    isMicOn
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "border-gray-700 bg-gray-900 hover:bg-gray-800"
+                  }`}
+                  onClick={!isMicOn ? startMic : () => {}}
+                >
+                  {isMicOn ? (
+                    <Mic className="h-5 w-5 text-white" />
+                  ) : (
+                    <MicOff className="h-5 w-5 text-gray-300" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                {isMicOn ? "Turn off mic" : "Turn on mic"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -370,8 +466,6 @@ export default function Room() {
           <Button
             variant="outline"
             onClick={() => {
-              alert("hit");
-
               socket.emit("leave-room", { roomId });
               navigate("/setup");
             }}

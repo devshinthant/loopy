@@ -161,6 +161,8 @@ peers.on("connection", async (socket) => {
   socket.on(
     "transport-produce",
     async ({ kind, rtpParameters, roomId }, callback) => {
+      console.log({ kind }, "SERVER KIND");
+
       try {
         const room = rooms.get(roomId);
         if (!room) return;
@@ -181,7 +183,11 @@ peers.on("connection", async (socket) => {
           });
         }
 
-        peer.addVideoProducer(producer);
+        if (kind === "video") {
+          peer.addVideoProducer(producer);
+        } else {
+          peer.addAudioProducer(producer);
+        }
 
         producer.on("transportclose", () => {
           console.log("Producer transport closed");
@@ -259,16 +265,6 @@ peers.on("connection", async (socket) => {
             error: "Router not found",
           });
         }
-
-        console.log(room.getPeers());
-        console.log(producerId, rtpCapabilities);
-
-        console.log(
-          router.canConsume({
-            producerId,
-            rtpCapabilities,
-          })
-        );
 
         if (
           !router.canConsume({
@@ -352,9 +348,17 @@ peers.on("connection", async (socket) => {
       .filter(([peerId, peer]) => {
         return peerId !== socket.id;
       })
-      .map(([, peer]) => [peer.audioProducer?.id, peer.videoProducer?.id])
-      .flat()
-      .filter(Boolean);
+      .map(([, peer]) => [
+        {
+          kind: "audio",
+          producerId: peer.audioProducer?.id,
+        },
+        {
+          kind: "video",
+          producerId: peer.videoProducer?.id,
+        },
+      ])
+      .flat();
 
     socket.emit("getOtherProducers", {
       producers,
