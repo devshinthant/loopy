@@ -29,7 +29,7 @@ const cleanUp = ({ socket, roomId, endRoom = false }: CleanUpProps) => {
       if (!endRoom) {
         socket.broadcast.emit("producer-update", {
           producerId: peer.videoProducer?.id,
-          kind: "video",
+          kind: "both",
           type: "remove",
         });
       }
@@ -42,7 +42,7 @@ const cleanUp = ({ socket, roomId, endRoom = false }: CleanUpProps) => {
         if (!endRoom) {
           socket.broadcast.emit("producer-update", {
             producerId: peer.videoProducer?.id,
-            kind: "video",
+            kind: "both",
             type: "remove",
           });
         }

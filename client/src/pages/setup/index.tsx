@@ -31,6 +31,7 @@ import useRemoteStreamStore from "@/store/remote-streams";
 import useLocalStreamStore from "@/store/local-streams";
 import useConsumersStore from "@/store/consumers";
 import useProducersStore from "@/store/producers";
+import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 
 const roomSchema = z.object({
   roomName: z.string().min(1, {
@@ -56,6 +57,10 @@ export default function Setup() {
   const { resetRemoteStreams, remoteStreams } = useRemoteStreamStore();
   const { resetVideoProducer, videoProducer } = useProducersStore();
   const { resetConsumers, consumers } = useConsumersStore();
+  const { resetLocalAudioStream, localAudioStream } = useLocalStreamStore();
+  const { resetRemoteAudioStreams, remoteAudioStreams } =
+    useRemoteAudioStreamStore();
+  const { resetAudioProducer, audioProducer } = useProducersStore();
 
   const form = useForm<z.infer<typeof roomSchema>>({
     resolver: zodResolver(roomSchema),
@@ -149,7 +154,10 @@ export default function Setup() {
         !receiveTransport ||
         !localVideoStream ||
         !remoteStreams ||
-        !videoProducer
+        !videoProducer ||
+        !localAudioStream ||
+        !remoteAudioStreams ||
+        !audioProducer
       )
         return;
 
@@ -166,6 +174,12 @@ export default function Setup() {
         resetVideoProducer,
         consumers,
         resetConsumers,
+        localAudioStream,
+        resetLocalAudioStream,
+        remoteAudioStreams,
+        resetRemoteAudioStreams,
+        audioProducer,
+        resetAudioProducer,
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

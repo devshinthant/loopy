@@ -47,6 +47,7 @@ export default function Room() {
     resetLocalVideoStream,
     localAudioStream,
     setLocalAudioStream,
+    resetLocalAudioStream,
   } = useLocalStreamStore();
 
   /* Remote Video Streams */
@@ -66,6 +67,7 @@ export default function Room() {
     remoteAudioStreams,
     pauseRemoteAudioStream,
     resumeRemoteAudioStream,
+    resetRemoteAudioStreams,
   } = useRemoteAudioStreamStore();
 
   /* Producers */
@@ -75,6 +77,7 @@ export default function Room() {
     resetVideoProducer,
     audioProducer,
     setAudioProducer,
+    resetAudioProducer,
   } = useProducersStore();
 
   /* Consumers */
@@ -97,9 +100,15 @@ export default function Room() {
   const startCamera = async () => {
     if (!produceTransport) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      let stream = localVideoStream;
+
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setLocalVideoStream(stream);
+      }
+
       const track = stream.getVideoTracks()[0];
-      setLocalVideoStream(stream);
+      track.enabled = true;
 
       const tempVideoConf = { ...videoConf, track };
       setVideoConf((current) => ({ ...current, track }));
@@ -112,20 +121,18 @@ export default function Room() {
           roomId,
           kind: "video",
         });
-      }
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setIsCameraOn(true);
-      }
-
-      if (!videoProducer) {
+      } else {
         await produce({
           transport: produceTransport,
           trackConfig: tempVideoConf,
           setProducer: setVideoProducer,
         });
       }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setIsCameraOn(true);
     } catch (error) {
       console.log(error);
     }
@@ -135,7 +142,9 @@ export default function Room() {
     if (!device || !produceTransport || !videoProducer || !localVideoStream)
       return;
 
-    localVideoStream.getVideoTracks().forEach((track) => track.stop());
+    localVideoStream
+      .getVideoTracks()
+      .forEach((track) => (track.enabled = false));
     videoProducer.pause();
     socket.emit("producer-paused", {
       producerId: videoProducer.id,
@@ -149,11 +158,15 @@ export default function Room() {
   const startMic = async () => {
     if (!produceTransport) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
+      let stream = localAudioStream;
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        setLocalAudioStream(stream);
+      }
       const track = stream.getAudioTracks()[0];
-      setLocalAudioStream(stream);
+      track.enabled = true;
 
       if (audioProducer) {
         await audioProducer.replaceTrack({ track });
@@ -163,17 +176,15 @@ export default function Room() {
           roomId,
           kind: "audio",
         });
-      }
-
-      setIsMicOn(true);
-
-      if (!audioProducer) {
+      } else {
         await produce({
           transport: produceTransport,
           trackConfig: { track },
           setProducer: setAudioProducer,
         });
       }
+
+      setIsMicOn(true);
     } catch (error) {
       console.log(error);
     }
@@ -183,7 +194,9 @@ export default function Room() {
     if (!localAudioStream || !audioProducer) {
       return console.log("no local audio stream or audio producer");
     }
-    localAudioStream.getAudioTracks().forEach((track) => track.stop());
+    localAudioStream
+      .getAudioTracks()
+      .forEach((track) => (track.enabled = false));
     audioProducer.pause();
     socket.emit("producer-paused", {
       producerId: audioProducer.id,
@@ -201,7 +214,7 @@ export default function Room() {
       type,
     }: {
       producerId: string;
-      kind: string;
+      kind: "audio" | "video" | "both";
       type: "add" | "remove";
     }) => {
       if (type === "add") {
@@ -225,7 +238,13 @@ export default function Room() {
       } else {
         if (kind === "video") {
           removeRemoteStream(producerId);
+        } else if (kind === "audio") {
+          removeRemoteAudioStream(producerId);
         } else {
+          /* Both */
+          console.log("both", "removed");
+
+          removeRemoteStream(producerId);
           removeRemoteAudioStream(producerId);
         }
       }
@@ -364,7 +383,10 @@ export default function Room() {
         !receiveTransport ||
         !localVideoStream ||
         !remoteStreams ||
-        !videoProducer
+        !videoProducer ||
+        !localAudioStream ||
+        !remoteAudioStreams ||
+        !audioProducer
       )
         return;
 
@@ -381,6 +403,12 @@ export default function Room() {
         resetVideoProducer,
         consumers,
         resetConsumers,
+        localAudioStream,
+        resetLocalAudioStream,
+        remoteAudioStreams,
+        resetRemoteAudioStreams,
+        audioProducer,
+        resetAudioProducer,
       });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
