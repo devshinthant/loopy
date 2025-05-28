@@ -54,10 +54,6 @@ const createReceiveTransport = ({
           errorBack(error as Error);
         }
       });
-
-      socket.emit("giveMeOthers", {
-        roomId,
-      });
     }
   );
 };

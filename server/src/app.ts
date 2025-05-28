@@ -94,6 +94,7 @@ peers.on("connection", async (socket) => {
     room.addPeer(socket);
     callback({
       message: "Joined room",
+      participantCount: room.getPeers()?.size || 0,
     });
   });
 

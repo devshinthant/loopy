@@ -18,7 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { useNavigate } from "react-router";
 
@@ -32,6 +32,9 @@ import useLocalStreamStore from "@/store/local-streams";
 import useConsumersStore from "@/store/consumers";
 import useProducersStore from "@/store/producers";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
+import { toast } from "sonner";
+import { Loader, Video, Lock } from "lucide-react";
+import { motion } from "framer-motion";
 
 const roomSchema = z.object({
   roomName: z.string().min(1, {
@@ -62,6 +65,11 @@ export default function Setup() {
     useRemoteAudioStreamStore();
   const { resetAudioProducer, audioProducer } = useProducersStore();
 
+  const [loading, setLoading] = useState({
+    joinRoom: false,
+    createRoom: false,
+  });
+
   const form = useForm<z.infer<typeof roomSchema>>({
     resolver: zodResolver(roomSchema),
     defaultValues: {
@@ -71,15 +79,25 @@ export default function Setup() {
   });
 
   function onJoinRoom(values: z.infer<typeof roomSchema>) {
+    setLoading({
+      ...loading,
+      joinRoom: true,
+    });
     socket.emit(
       "joinRoom",
       {
         roomId: values.roomName,
         password: values.password,
       },
-      (data: { message: string; error: string }) => {
+      (data: { message: string; error: string; participantCount: number }) => {
         if (data.error) {
-          return console.log(data.error);
+          setLoading({
+            ...loading,
+            joinRoom: false,
+          });
+          return toast.error(data.error, {
+            description: <p className="text-black">Please try again.</p>,
+          });
         }
         if (data.message) {
           console.log(data.message);
@@ -93,9 +111,15 @@ export default function Setup() {
           setProduceTransport,
         });
 
-        navigate(`/room/${values.roomName}`, {
+        setLoading({
+          ...loading,
+          joinRoom: false,
+        });
+
+        navigate(`/preview`, {
           state: {
-            type: "joim",
+            roomId: values.roomName,
+            participantCount: data.participantCount,
           },
         });
       }
@@ -107,6 +131,11 @@ export default function Setup() {
       return console.log("Invalid form", form.formState.errors);
     }
 
+    setLoading({
+      ...loading,
+      createRoom: true,
+    });
+
     const values = form.getValues();
 
     socket.emit(
@@ -117,6 +146,13 @@ export default function Setup() {
       },
       (data: { message: string; error: string }) => {
         if (data.error) {
+          toast.error(data.error, {
+            description: <p className="text-black">Please try again.</p>,
+          });
+          setLoading({
+            ...loading,
+            createRoom: false,
+          });
           return console.log(data.error);
         }
         if (data.message) {
@@ -131,10 +167,22 @@ export default function Setup() {
           setProduceTransport,
         });
 
+        setLoading({
+          ...loading,
+          createRoom: false,
+        });
+
         navigate(`/room/${values.roomName}`, {
           state: {
             type: "create",
           },
+        });
+        toast.success("Room created.", {
+          description: (
+            <p className="text-black">
+              You can now start the video conference.
+            </p>
+          ),
         });
       }
     );
@@ -186,73 +234,119 @@ export default function Setup() {
   }, []);
 
   return (
-    <div className="w-dvw h-dvh flex items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>A Room</CardTitle>
-          <CardDescription>
-            Set up your room details to start a video conference
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onJoinRoom)}>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-3">
-                  <FormField
-                    control={form.control}
-                    name="roomName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Room Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="My Video Conference"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+    <div className="w-dvw h-dvh flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-black">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md px-4"
+      >
+        <Card className="w-full backdrop-blur-sm bg-black/40 border-gray-800/50 shadow-2xl">
+          <CardHeader className="space-y-3">
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center justify-center mb-2"
+            >
+              <Video className="w-12 h-12 text-white" />
+            </motion.div>
+            <CardTitle className="text-2xl font-bold text-center text-white">
+              Video Conference
+            </CardTitle>
+            <CardDescription className="text-center text-gray-400">
+              Set up your room details to start a video conference
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onJoinRoom)}>
+                <div className="flex flex-col gap-6">
+                  <div className="grid gap-4">
+                    <FormField
+                      control={form.control}
+                      name="roomName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-200">
+                            Room Name
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              placeholder="My Video Conference"
+                              className="bg-black/50 border-gray-800 text-white placeholder:text-gray-500 focus:border-gray-600 transition-colors"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-red-400" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid gap-4">
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-200">
+                            Password
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type="password"
+                                placeholder="********"
+                                className="bg-black/50 border-gray-800 text-white placeholder:text-gray-500 focus:border-gray-600 transition-colors pl-10"
+                                {...field}
+                              />
+                              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            </div>
+                          </FormControl>
+                          <FormMessage className="text-red-400" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-3 pt-2">
+                    <Button
+                      variant="outline"
+                      type="submit"
+                      className="w-full bg-black/50 hover:bg-black/70 hover:text-gray-200 cursor-pointer text-white border-gray-800 hover:border-gray-700 transition-all duration-300"
+                      disabled={loading.joinRoom}
+                    >
+                      {loading.joinRoom ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader className="w-4 h-4 animate-spin" />
+                          <span>Joining Room...</span>
+                        </div>
+                      ) : (
+                        "Join Existing Room"
+                      )}
+                    </Button>
+                    <Button
+                      onClick={onCreateRoom}
+                      type="button"
+                      className="w-full bg-white hover:bg-gray-200 cursor-pointer text-black transition-all duration-300"
+                      disabled={loading.createRoom}
+                    >
+                      {loading.createRoom ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader className="w-4 h-4 animate-spin" />
+                          <span>Creating Room...</span>
+                        </div>
+                      ) : (
+                        "Create Room"
+                      )}
+                    </Button>
+                  </div>
                 </div>
-                <div className="grid gap-3">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="********"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Button variant="outline" type="submit" className="w-full">
-                    Join Existing Room
-                  </Button>
-                  <Button
-                    onClick={onCreateRoom}
-                    type="button"
-                    className="w-full"
-                  >
-                    Create Room
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }

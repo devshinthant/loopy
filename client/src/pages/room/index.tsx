@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -7,30 +7,27 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LogOut, Mic, MicOff, Video, VideoOff } from "lucide-react";
-import { redirect, useLocation, useNavigate, useParams } from "react-router";
+import { redirect, useNavigate, useParams } from "react-router";
 import useRoomStore from "@/store/room";
 import useTransportsStore from "@/store/transports";
 import useProducersStore from "@/store/producers";
 import { socket } from "@/lib/socket";
-import handleConsume from "@/lib/handleConsume";
 import produce from "@/lib/produce";
 import useConsumersStore from "@/store/consumers";
 import useLocalStreamStore from "@/store/local-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
 import cleanUp from "@/lib/cleanUp";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
+import useUserOptionsStore from "@/store/userOptions";
 
+import useListenProducerUpdate from "@/hooks/useListenProducerUpdate";
 export default function Room() {
   const params = useParams();
   const navigate = useNavigate();
 
-  const location = useLocation();
-
   const roomId = params.roomId as string;
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const { device, rtpCapabilities } = useRoomStore();
+  const { device } = useRoomStore();
 
   /* Transports */
   const {
@@ -40,7 +37,7 @@ export default function Room() {
     resetReceiveTransport,
   } = useTransportsStore();
 
-  /* Streams */
+  /* Local Streams */
   const {
     setLocalVideoStream,
     localVideoStream,
@@ -53,17 +50,13 @@ export default function Room() {
   /* Remote Video Streams */
   const {
     remoteStreams,
-    addRemoteStream,
     pauseRemoteStream,
     resumeRemoteStream,
     resetRemoteStreams,
-    removeRemoteStream,
   } = useRemoteStreamStore();
 
   /* Remote Audio Streams */
   const {
-    addRemoteAudioStream,
-    removeRemoteAudioStream,
     remoteAudioStreams,
     pauseRemoteAudioStream,
     resumeRemoteAudioStream,
@@ -81,7 +74,7 @@ export default function Room() {
   } = useProducersStore();
 
   /* Consumers */
-  const { addConsumer, consumers, resetConsumers } = useConsumersStore();
+  const { consumers, resetConsumers } = useConsumersStore();
 
   const [videoConf, setVideoConf] = useState({
     encoding: [
@@ -92,8 +85,13 @@ export default function Room() {
     codecOptions: { videoGoogleStartBitrate: 1000 },
   });
 
-  const [isCameraOn, setIsCameraOn] = useState(false);
-  const [isMicOn, setIsMicOn] = useState(false);
+  const {
+    micOpened: isMicOn,
+    setMicOpened: setIsMicOn,
+    cameraOpened: isCameraOn,
+    setCameraOpened: setIsCameraOn,
+  } = useUserOptionsStore();
+
   const [disableCamera] = useState(false);
 
   /* Camera */
@@ -127,10 +125,6 @@ export default function Room() {
           trackConfig: tempVideoConf,
           setProducer: setVideoProducer,
         });
-      }
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
       }
       setIsCameraOn(true);
     } catch (error) {
@@ -206,111 +200,9 @@ export default function Room() {
     setIsMicOn(false);
   };
 
-  /* Listen for producer updates */
-  useEffect(() => {
-    const onNewProducer = ({
-      producerId,
-      kind,
-      type,
-    }: {
-      producerId: string;
-      kind: "audio" | "video" | "both";
-      type: "add" | "remove";
-    }) => {
-      if (type === "add") {
-        handleConsume({
-          roomId,
-          producerId,
-          kind,
-          receiveTransport,
-          rtpCapabilities,
-          addConsumer,
-          callback: (track) => {
-            const stream = new MediaStream([track]);
-            if (kind === "video") {
-              addRemoteStream({ stream, paused: false, producerId });
-            } else {
-              console.log("remote audio producer", producerId);
-              addRemoteAudioStream({ stream, paused: false, producerId });
-            }
-          },
-        });
-      } else {
-        if (kind === "video") {
-          removeRemoteStream(producerId);
-        } else if (kind === "audio") {
-          removeRemoteAudioStream(producerId);
-        } else {
-          /* Both */
-          console.log("both", "removed");
-
-          removeRemoteStream(producerId);
-          removeRemoteAudioStream(producerId);
-        }
-      }
-    };
-
-    socket.on("producer-update", onNewProducer);
-
-    return () => {
-      socket.off("producer-update", onNewProducer);
-    };
-  }, [
-    receiveTransport,
+  useListenProducerUpdate({
     roomId,
-    rtpCapabilities,
-    addConsumer,
-    addRemoteStream,
-    addRemoteAudioStream,
-    removeRemoteStream,
-    removeRemoteAudioStream,
-  ]);
-
-  /* Get Initial Producers */
-  useEffect(() => {
-    if (location.state.type === "create") return;
-    if (!device || !rtpCapabilities || !receiveTransport) return;
-
-    const handleGetOtherProducers = ({
-      producers,
-    }: {
-      producers: { kind: string; producerId: string }[];
-    }) => {
-      console.log({ producers }, "initial producers");
-      producers.forEach(({ kind, producerId }) => {
-        handleConsume({
-          roomId,
-          producerId,
-          kind: "video",
-          receiveTransport,
-          rtpCapabilities,
-          addConsumer,
-          callback: (track) => {
-            const stream = new MediaStream([track]);
-            if (kind === "video") {
-              addRemoteStream({ stream, paused: false, producerId });
-            } else {
-              addRemoteAudioStream({ stream, paused: false, producerId });
-            }
-          },
-        });
-      });
-    };
-    socket.on("getOtherProducers", handleGetOtherProducers);
-
-    return () => {
-      socket.off("getOtherProducers", handleGetOtherProducers);
-    };
-  }, [
-    device,
-    rtpCapabilities,
-    receiveTransport,
-    roomId,
-    location.state.type,
-    addConsumer,
-    addRemoteStream,
-    addRemoteAudioStream,
-  ]);
+  });
 
   /* Handle Pause/Resume */
   useEffect(() => {
@@ -460,7 +352,14 @@ export default function Room() {
         </div>
       ))}
 
-      <video ref={videoRef} id="localvideo" autoPlay playsInline />
+      <video
+        ref={(el) => {
+          if (el) el.srcObject = localVideoStream;
+        }}
+        id="localvideo"
+        autoPlay
+        playsInline
+      />
 
       {remoteAudioStreams?.map(({ stream }) => (
         <audio
@@ -534,7 +433,6 @@ export default function Room() {
           <Button
             variant="outline"
             onClick={() => {
-              alert("hit");
               socket.emit("end-room", { roomId });
               navigate("/setup");
             }}
