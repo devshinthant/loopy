@@ -349,14 +349,22 @@ peers.on("connection", async (socket) => {
         return peerId !== socket.id;
       })
       .map(([, peer]) => [
-        {
-          kind: "audio",
-          producerId: peer.audioProducer?.id,
-        },
-        {
-          kind: "video",
-          producerId: peer.videoProducer?.id,
-        },
+        ...(peer.audioProducer
+          ? [
+              {
+                kind: "audio",
+                producerId: peer.audioProducer?.id,
+              },
+            ]
+          : []),
+        ...(peer.videoProducer
+          ? [
+              {
+                kind: "video",
+                producerId: peer.videoProducer?.id,
+              },
+            ]
+          : []),
       ])
       .flat();
 
@@ -365,18 +373,20 @@ peers.on("connection", async (socket) => {
     });
   });
 
-  socket.on("producer-paused", ({ producerId, roomId }) => {
-    console.log("server producer-paused", { producerId, roomId });
+  socket.on("producer-paused", ({ producerId, roomId, kind }) => {
+    console.log("server producer-paused", { producerId, roomId, kind });
     socket.broadcast.emit("peer-producer-paused", {
       producerId,
       peerId: socket.id,
+      kind,
     });
   });
 
-  socket.on("producer-resumed", ({ producerId, roomId }) => {
+  socket.on("producer-resumed", ({ producerId, roomId, kind }) => {
     socket.broadcast.emit("peer-producer-resumed", {
       producerId,
       peerId: socket.id,
+      kind,
     });
   });
 });

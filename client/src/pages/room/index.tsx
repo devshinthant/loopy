@@ -45,8 +45,11 @@ export default function Room() {
     setLocalVideoStream,
     localVideoStream,
     resetLocalVideoStream,
+    localAudioStream,
     setLocalAudioStream,
   } = useLocalStreamStore();
+
+  /* Remote Video Streams */
   const {
     remoteStreams,
     addRemoteStream,
@@ -57,8 +60,13 @@ export default function Room() {
   } = useRemoteStreamStore();
 
   /* Remote Audio Streams */
-  const { addRemoteAudioStream, removeRemoteAudioStream, remoteAudioStreams } =
-    useRemoteAudioStreamStore();
+  const {
+    addRemoteAudioStream,
+    removeRemoteAudioStream,
+    remoteAudioStreams,
+    pauseRemoteAudioStream,
+    resumeRemoteAudioStream,
+  } = useRemoteAudioStreamStore();
 
   /* Producers */
   const {
@@ -102,6 +110,7 @@ export default function Room() {
         socket.emit("producer-resumed", {
           producerId: videoProducer.id,
           roomId,
+          kind: "video",
         });
       }
 
@@ -128,7 +137,11 @@ export default function Room() {
 
     localVideoStream.getVideoTracks().forEach((track) => track.stop());
     videoProducer.pause();
-    socket.emit("producer-paused", { producerId: videoProducer.id, roomId });
+    socket.emit("producer-paused", {
+      producerId: videoProducer.id,
+      roomId,
+      kind: "video",
+    });
     setIsCameraOn(false);
   };
 
@@ -145,6 +158,11 @@ export default function Room() {
       if (audioProducer) {
         await audioProducer.replaceTrack({ track });
         audioProducer.resume();
+        socket.emit("producer-resumed", {
+          producerId: audioProducer.id,
+          roomId,
+          kind: "audio",
+        });
       }
 
       setIsMicOn(true);
@@ -159,6 +177,20 @@ export default function Room() {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const pauseMic = () => {
+    if (!localAudioStream || !audioProducer) {
+      return console.log("no local audio stream or audio producer");
+    }
+    localAudioStream.getAudioTracks().forEach((track) => track.stop());
+    audioProducer.pause();
+    socket.emit("producer-paused", {
+      producerId: audioProducer.id,
+      roomId,
+      kind: "audio",
+    });
+    setIsMicOn(false);
   };
 
   /* Listen for producer updates */
@@ -267,20 +299,34 @@ export default function Room() {
 
     const handlePeerProducerPaused = ({
       producerId,
+      kind,
     }: {
       producerId: string;
+      kind: "audio" | "video";
     }) => {
-      console.log({ producerId }, "peer producer paused");
-      pauseRemoteStream(producerId);
+      console.log({ producerId, kind }, "peer producer paused");
+      if (kind === "video") {
+        pauseRemoteStream(producerId);
+      }
+      if (kind === "audio") {
+        pauseRemoteAudioStream(producerId);
+      }
     };
 
     const handlePeerProducerResumed = ({
       producerId,
+      kind,
     }: {
       producerId: string;
+      kind: "audio" | "video";
     }) => {
       console.log({ producerId }, "peer producer resumed");
-      resumeRemoteStream(producerId);
+      if (kind === "video") {
+        resumeRemoteStream(producerId);
+      }
+      if (kind === "audio") {
+        resumeRemoteAudioStream(producerId);
+      }
     };
 
     socket.on("peer-producer-paused", handlePeerProducerPaused);
@@ -290,7 +336,13 @@ export default function Room() {
       socket.off("peer-producer-paused", handlePeerProducerPaused);
       socket.off("peer-producer-resumed", handlePeerProducerResumed);
     };
-  }, [remoteStreams, pauseRemoteStream, resumeRemoteStream]);
+  }, [
+    remoteStreams,
+    pauseRemoteStream,
+    resumeRemoteStream,
+    resumeRemoteAudioStream,
+    pauseRemoteAudioStream,
+  ]);
 
   /* End Room */
   useEffect(() => {
@@ -409,7 +461,7 @@ export default function Room() {
                       ? "bg-green-600 hover:bg-green-700"
                       : "border-gray-700 bg-gray-900 hover:bg-gray-800"
                   }`}
-                  onClick={!isMicOn ? startMic : () => {}}
+                  onClick={!isMicOn ? startMic : pauseMic}
                 >
                   {isMicOn ? (
                     <Mic className="h-5 w-5 text-white" />
