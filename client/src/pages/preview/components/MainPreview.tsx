@@ -11,6 +11,7 @@ import useProducersStore from "@/store/producers";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
 import useRoomStore from "@/store/room";
+import useSelectedDevicesStore from "@/store/selectedDevices";
 import useTransportsStore from "@/store/transports";
 import useUserOptionsStore from "@/store/userOptions";
 import {
@@ -56,6 +57,8 @@ export default function MainPreview() {
 
   const { addRemoteAudioStream } = useRemoteAudioStreamStore();
 
+  const { selectedAudioInput, selectedVideoInput } = useSelectedDevicesStore();
+
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   const handleCameraOpen = async () => {
@@ -67,7 +70,9 @@ export default function MainPreview() {
       stream.getTracks().forEach((track) => (track.enabled = true));
     } else {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: selectedVideoInput
+          ? { deviceId: { exact: selectedVideoInput } }
+          : true,
       });
       setLocalVideoStream(stream);
     }
@@ -91,7 +96,9 @@ export default function MainPreview() {
       stream.getTracks().forEach((track) => (track.enabled = true));
     } else {
       stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: selectedAudioInput
+          ? { deviceId: { exact: selectedAudioInput } }
+          : true,
       });
       setLocalAudioStream(stream);
     }
