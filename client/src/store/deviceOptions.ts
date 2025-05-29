@@ -10,6 +10,10 @@ interface DeviceOptionsActions {
   setAudioInputs: (inputs: MediaDeviceInfo[]) => void;
   setAudioOutputs: (outputs: MediaDeviceInfo[]) => void;
   setVideoInputs: (inputs: MediaDeviceInfo[]) => void;
+
+  resetAudioInputs: () => void;
+  resetAudioOutputs: () => void;
+  resetVideoInputs: () => void;
 }
 
 type DeviceOptionsStore = DeviceOptionsState & DeviceOptionsActions;
@@ -25,6 +29,9 @@ const useDeviceOptionsStore = create<DeviceOptionsStore>()((set) => ({
   setAudioInputs: (audioInputs) => set({ audioInputs }),
   setAudioOutputs: (audioOutputs) => set({ audioOutputs }),
   setVideoInputs: (videoInputs) => set({ videoInputs }),
+  resetAudioInputs: () => set(initialState),
+  resetAudioOutputs: () => set(initialState),
+  resetVideoInputs: () => set(initialState),
 }));
 
 export default useDeviceOptionsStore;

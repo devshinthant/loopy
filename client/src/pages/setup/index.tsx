@@ -27,11 +27,6 @@ import setUpRouter from "@/lib/setUpRouter";
 import useRoomStore from "@/store/room";
 import useTransportsStore from "@/store/transports";
 import cleanUp from "@/lib/cleanUp";
-import useRemoteStreamStore from "@/store/remote-streams";
-import useLocalStreamStore from "@/store/local-streams";
-import useConsumersStore from "@/store/consumers";
-import useProducersStore from "@/store/producers";
-import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 import { toast } from "sonner";
 import { Loader, Video, Lock } from "lucide-react";
 import { motion } from "framer-motion";
@@ -49,21 +44,7 @@ export default function Setup() {
   const navigate = useNavigate();
 
   const { setRtpCapabilities, setDevice } = useRoomStore();
-  const {
-    setReceiveTransport,
-    setProduceTransport,
-    produceTransport,
-    receiveTransport,
-  } = useTransportsStore();
-  const { resetProduceTransport, resetReceiveTransport } = useTransportsStore();
-  const { resetLocalVideoStream, localVideoStream } = useLocalStreamStore();
-  const { resetRemoteStreams, remoteStreams } = useRemoteStreamStore();
-  const { resetVideoProducer, videoProducer } = useProducersStore();
-  const { resetConsumers, consumers } = useConsumersStore();
-  const { resetLocalAudioStream, localAudioStream } = useLocalStreamStore();
-  const { resetRemoteAudioStreams, remoteAudioStreams } =
-    useRemoteAudioStreamStore();
-  const { resetAudioProducer, audioProducer } = useProducersStore();
+  const { setReceiveTransport, setProduceTransport } = useTransportsStore();
 
   const [loading, setLoading] = useState({
     joinRoom: false,
@@ -197,40 +178,8 @@ export default function Setup() {
   useEffect(() => {
     socket.on("disconnect", () => {
       console.log("Disconnected");
-      if (
-        !produceTransport ||
-        !receiveTransport ||
-        !localVideoStream ||
-        !remoteStreams ||
-        !videoProducer ||
-        !localAudioStream ||
-        !remoteAudioStreams ||
-        !audioProducer
-      )
-        return;
-
-      cleanUp({
-        produceTransport,
-        resetProduceTransport,
-        receiveTransport,
-        resetReceiveTransport,
-        localVideoStream,
-        resetLocalVideoStream,
-        remoteStreams,
-        resetRemoteStreams,
-        videoProducer,
-        resetVideoProducer,
-        consumers,
-        resetConsumers,
-        localAudioStream,
-        resetLocalAudioStream,
-        remoteAudioStreams,
-        resetRemoteAudioStreams,
-        audioProducer,
-        resetAudioProducer,
-      });
+      cleanUp();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

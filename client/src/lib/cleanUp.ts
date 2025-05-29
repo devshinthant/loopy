@@ -1,58 +1,47 @@
-import type { RemoteStream } from "@/store/remote-streams";
-import type { Consumer, Producer, Transport } from "mediasoup-client/types";
+import useConsumersStore from "@/store/consumers";
+import useDeviceOptionsStore from "@/store/deviceOptions";
+import useLocalStreamStore from "@/store/local-streams";
+import useProducersStore from "@/store/producers";
+import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
+import useRemoteStreamStore from "@/store/remote-streams";
+import useSelectedDevicesStore from "@/store/selectedDevices";
+import useTransportsStore from "@/store/transports";
+import useUserOptionsStore from "@/store/userOptions";
 
-interface Props {
-  produceTransport: Transport;
-  resetProduceTransport: () => void;
-
-  receiveTransport: Transport;
-  resetReceiveTransport: () => void;
-
-  localVideoStream: MediaStream;
-  resetLocalVideoStream: () => void;
-
-  localAudioStream: MediaStream;
-  resetLocalAudioStream: () => void;
-
-  remoteStreams: RemoteStream[];
-  resetRemoteStreams: () => void;
-
-  remoteAudioStreams: RemoteStream[];
-  resetRemoteAudioStreams: () => void;
-
-  videoProducer: Producer;
-  resetVideoProducer: () => void;
-
-  audioProducer: Producer;
-  resetAudioProducer: () => void;
-
-  consumers: Consumer[];
-  resetConsumers: () => void;
-}
-
-const cleanUp = ({
-  produceTransport,
-  resetProduceTransport,
-  receiveTransport,
-  resetReceiveTransport,
-  localVideoStream,
-  resetLocalVideoStream,
-  remoteStreams,
-  resetRemoteStreams,
-  videoProducer,
-  resetVideoProducer,
-  consumers,
-  resetConsumers,
-  localAudioStream,
-  resetLocalAudioStream,
-  audioProducer,
-  resetAudioProducer,
-  remoteAudioStreams,
-  resetRemoteAudioStreams,
-}: Props) => {
+const cleanUp = () => {
   console.log("Cleaning Up...");
 
+  // /* Clear Selected Devices */
+  const {
+    resetSelectedAudioInput,
+    resetSelectedAudioOutput,
+    resetSelectedVideoInput,
+  } = useSelectedDevicesStore.getState();
+  resetSelectedAudioInput();
+  resetSelectedAudioOutput();
+  resetSelectedVideoInput();
+
+  /* Clear User Options */
+
+  const { resetMicOpened, resetCameraOpened } = useUserOptionsStore.getState();
+  resetMicOpened();
+  resetCameraOpened();
+
+  /* Clear deviceOptions */
+  const { resetAudioInputs, resetAudioOutputs, resetVideoInputs } =
+    useDeviceOptionsStore.getState();
+  resetAudioInputs();
+  resetAudioOutputs();
+  resetVideoInputs();
+
   /* Close Transports */
+
+  const {
+    resetProduceTransport,
+    resetReceiveTransport,
+    produceTransport,
+    receiveTransport,
+  } = useTransportsStore.getState();
   produceTransport?.close();
   resetProduceTransport();
   receiveTransport?.close();
@@ -60,20 +49,29 @@ const cleanUp = ({
   console.log("Transports closed");
 
   /* Close Local Stream */
+  const {
+    localAudioStream,
+    localVideoStream,
+    resetLocalAudioStream,
+    resetLocalVideoStream,
+  } = useLocalStreamStore.getState();
   localVideoStream?.getTracks().forEach((track) => track.stop());
   resetLocalVideoStream();
 
   localAudioStream?.getTracks().forEach((track) => track.stop());
   resetLocalAudioStream();
-
   console.log("Local Stream Reset");
 
-  /* Close Remote Streams */
+  /* Close Remote Video Streams */
+  const { remoteStreams, resetRemoteStreams } = useRemoteStreamStore.getState();
   remoteStreams?.forEach(({ stream }) =>
     stream.getTracks().forEach((track) => track.stop())
   );
   resetRemoteStreams();
 
+  /* Close Remote Audio Streams */
+  const { remoteAudioStreams, resetRemoteAudioStreams } =
+    useRemoteAudioStreamStore.getState();
   remoteAudioStreams?.forEach(({ stream }) =>
     stream.getTracks().forEach((track) => track.stop())
   );
@@ -81,19 +79,38 @@ const cleanUp = ({
   console.log("Remote Streams Reset");
 
   /* Close Video Producer */
+  const { videoProducer, resetVideoProducer } = useProducersStore.getState();
   videoProducer?.close();
   resetVideoProducer();
   console.log("Producer Closed");
 
   /* Close Audio Producer */
+  const { audioProducer, resetAudioProducer } = useProducersStore.getState();
   audioProducer?.close();
   resetAudioProducer();
   console.log("Audio Producer Closed");
 
   /* Close Consumers */
+  const { consumers, resetConsumers } = useConsumersStore.getState();
   consumers?.forEach((consumer) => consumer.close());
   resetConsumers();
   console.log("Consumers Closed");
+
+  alert("HITTT");
+};
+
+export const testCleanUp = () => {
+  const {
+    resetSelectedAudioInput,
+    resetSelectedAudioOutput,
+    resetSelectedVideoInput,
+  } = useSelectedDevicesStore.getState();
+
+  resetSelectedAudioInput();
+  resetSelectedAudioOutput();
+  resetSelectedVideoInput();
+
+  alert("hiiii");
 };
 
 export default cleanUp;

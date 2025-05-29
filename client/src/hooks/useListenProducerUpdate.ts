@@ -54,13 +54,14 @@ export default function useListenProducerUpdate({
           removeRemoteStream(producerId);
         } else if (kind === "audio") {
           removeRemoteAudioStream(producerId);
-        } else {
-          /* Both */
-          console.log("both", "removed");
-
-          removeRemoteStream(producerId);
-          removeRemoteAudioStream(producerId);
         }
+        //  else {
+        //   /* Both */
+        //   console.log("both", "removed", producerId);
+
+        //   removeRemoteStream(producerId);
+        //   removeRemoteAudioStream(producerId);
+        // }
       }
     };
 

@@ -188,6 +188,8 @@ export default function MainPreview() {
     roomId,
   });
 
+  console.log({ micOpened, cameraOpened });
+
   return (
     <div className="lg:col-span-2">
       <Card className="bg-black/40 p-0 backdrop-blur-sm border-gray-800/50 shadow-2xl mb-8">
