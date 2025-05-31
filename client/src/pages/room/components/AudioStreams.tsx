@@ -10,6 +10,7 @@ export default function AudioStreams() {
         <audio
           key={stream.id}
           autoPlay
+          hidden
           controls
           ref={(el) => {
             if (el) {

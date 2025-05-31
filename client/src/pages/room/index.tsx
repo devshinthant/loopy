@@ -95,11 +95,9 @@ export default function Room() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden">
+    <div className="flex w-full h-full flex-col overflow-hidden">
       <VideoDisplay />
-
       <AudioStreams />
-
       <ControlBar />
     </div>
   );

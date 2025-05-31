@@ -3,7 +3,7 @@ import { Toaster } from "../ui/sonner";
 
 export default function RootLayout() {
   return (
-    <div>
+    <div className="h-dvh w-dvw">
       <Outlet />
       <Toaster />
     </div>
