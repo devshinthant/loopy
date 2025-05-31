@@ -180,7 +180,7 @@ export default function ControlBar() {
   };
 
   return (
-    <div className="flex py-3 items-center justify-between border-t border-gray-800 bg-gray-950 px-[10%]">
+    <div className="flex py-3 items-center justify-between border-t border-gray-800 bg-gray-950 px-[5%]">
       <div className="flex items-center gap-2">
         <div className="flex items-center">
           <TooltipProvider>
