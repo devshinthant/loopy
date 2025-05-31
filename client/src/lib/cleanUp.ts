@@ -95,8 +95,6 @@ const cleanUp = () => {
   consumers?.forEach((consumer) => consumer.close());
   resetConsumers();
   console.log("Consumers Closed");
-
-  alert("HITTT");
 };
 
 export const testCleanUp = () => {

@@ -97,15 +97,12 @@ export default function Room() {
   }
 
   return (
-    <div className="flex relative w-full h-full flex-col overflow-hidden">
+    <div className="flex w-full h-full flex-col overflow-hidden">
       <div
         style={{
-          WebkitBackdropFilter: "blur(4px)",
-          background: "rgba(255,255,255,0.05)",
-          backdropFilter: "blur(4px)",
           borderBottom: "1px solid rgba(255,255,255,0.1)",
         }}
-        className="absolute py-4 px-[5%] top-0 text-white left-0 w-full z-10"
+        className="bg-gradient-to-l from-black via-gray-900 to-black py-4 px-[5%]  text-white  w-full"
       >
         <div className="flex items-center justify-between">
           {/* Left side - User info */}
