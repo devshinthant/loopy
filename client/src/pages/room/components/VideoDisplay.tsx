@@ -2,6 +2,7 @@ import useLocalStreamStore from "@/store/local-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
 import useUserOptionsStore from "@/store/userOptions";
 import { VideoOff } from "lucide-react";
+import { motion } from "motion/react";
 
 export default function VideoDisplay() {
   const { localVideoStream } = useLocalStreamStore();
@@ -26,7 +27,7 @@ export default function VideoDisplay() {
                 className="w-full h-full object-cover"
                 muted={false}
                 style={{
-                  filter: paused ? "grayscale(100%) brightness(0.5)" : "none",
+                  filter: paused ? "grayscale(100%) brightness( 0.5)" : "none",
                 }}
               />
             )}
@@ -52,7 +53,11 @@ export default function VideoDisplay() {
           </div>
         ))}
       </div>
-      <div className="absolute border-[2px] border-gray-800/40 rounded-md overflow-hidden bottom-20 right-10 w-[300px]">
+      <motion.div
+        drag
+        dragMomentum={false}
+        className="absolute border-[2px] border-gray-800/40 rounded-md overflow-hidden bottom-20 right-10 w-[300px]"
+      >
         {cameraOpened ? (
           <video
             ref={(el) => {
@@ -68,7 +73,7 @@ export default function VideoDisplay() {
             <VideoOff className="text-gray-400" />
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
