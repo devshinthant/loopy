@@ -6,8 +6,9 @@ interface Props {
 
 export const getProducerInfo = ({ producerId }: Props) => {
   const { consumers } = useConsumersStore.getState();
-  console.log({ consumers });
 
   const consumer = consumers.find((c) => c.consumer.producerId === producerId);
+  console.log({ consumer });
+
   return consumer?.userData;
 };

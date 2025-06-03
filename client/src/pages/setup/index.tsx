@@ -78,7 +78,6 @@ export default function Setup() {
         roomId: values.roomName,
         password: values.password,
         userData: {
-          id: user.id,
           name: user.fullName,
           email: user.emailAddresses[0].emailAddress,
           imageUrl: user.imageUrl,
@@ -137,7 +136,6 @@ export default function Setup() {
     if (!user) {
       return toast.error("You are not logged in.");
     }
-    console.log({ user }, "ZZZ");
 
     socket.emit(
       "createRoom",
@@ -145,7 +143,6 @@ export default function Setup() {
         roomId: values.roomName,
         password: values.password,
         userData: {
-          id: user.id,
           name: user.fullName,
           email: user.emailAddresses[0].emailAddress,
           imageUrl: user.imageUrl,

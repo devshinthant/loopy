@@ -4,6 +4,7 @@ export type RemoteAudioStream = {
   paused: boolean;
   producerId: string;
   stream: MediaStream;
+  emitterId: string;
 };
 
 interface RemoteAudioStreamState {

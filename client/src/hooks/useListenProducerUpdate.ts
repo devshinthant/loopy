@@ -42,10 +42,20 @@ export default function useListenProducerUpdate({
           callback: (track) => {
             const stream = new MediaStream([track]);
             if (kind === "video") {
-              addRemoteStream({ stream, paused: false, producerId });
+              addRemoteStream({
+                stream,
+                paused: false,
+                producerId,
+                emitterId: producerData.id,
+              });
             } else {
               console.log("remote audio producer", producerId);
-              addRemoteAudioStream({ stream, paused: false, producerId });
+              addRemoteAudioStream({
+                stream,
+                paused: false,
+                producerId,
+                emitterId: producerData.id,
+              });
             }
           },
         });

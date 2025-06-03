@@ -352,6 +352,8 @@ peers.on("connection", async (socket) => {
 
     const producers = Array.from(peers)
       .filter(([peerId, peer]) => {
+        console.log({ peer });
+
         return peerId !== socket.id;
       })
       .map(([, peer]) => [
@@ -359,6 +361,8 @@ peers.on("connection", async (socket) => {
           ? [
               {
                 kind: "audio",
+                userData: peer.data,
+                paused: peer.audioProducer?.paused,
                 producerId: peer.audioProducer?.id,
               },
             ]
@@ -368,6 +372,7 @@ peers.on("connection", async (socket) => {
               {
                 kind: "video",
                 userData: peer.data,
+                paused: peer.videoProducer?.paused,
                 producerId: peer.videoProducer?.id,
               },
             ]
@@ -380,8 +385,21 @@ peers.on("connection", async (socket) => {
     });
   });
 
-  socket.on("producer-paused", ({ producerId, roomId, kind }) => {
+  socket.on("producer-paused", async ({ producerId, roomId, kind }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const peer = room.getPeer(socket);
+    if (!peer) return;
+
+    if (kind === "audio") {
+      await peer.audioProducer?.pause();
+    } else {
+      await peer.videoProducer?.pause();
+    }
+
     console.log("server producer-paused", { producerId, roomId, kind });
+
     socket.broadcast.emit("peer-producer-paused", {
       producerId,
       peerId: socket.id,
@@ -389,7 +407,18 @@ peers.on("connection", async (socket) => {
     });
   });
 
-  socket.on("producer-resumed", ({ producerId, roomId, kind }) => {
+  socket.on("producer-resumed", async ({ producerId, roomId, kind }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const peer = room.getPeer(socket);
+    if (!peer) return;
+
+    if (kind === "audio") {
+      await peer.audioProducer?.resume();
+    } else {
+      await peer.videoProducer?.resume();
+    }
     socket.broadcast.emit("peer-producer-resumed", {
       producerId,
       peerId: socket.id,

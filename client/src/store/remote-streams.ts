@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 export type RemoteStream = {
   paused: boolean;
+  emitterId: string;
   producerId: string;
   stream: MediaStream;
 };

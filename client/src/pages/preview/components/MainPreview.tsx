@@ -144,12 +144,15 @@ export default function MainPreview() {
     const handleGetOtherProducers = ({
       producers,
     }: {
-      producers: { kind: string; producerId: string; userData: UserData }[];
+      producers: {
+        kind: string;
+        producerId: string;
+        userData: UserData;
+        paused: boolean;
+      }[];
     }) => {
       console.log({ producers }, "initial producers");
-      producers.forEach(({ kind, producerId, userData }) => {
-        console.log({ userData }, "FROM SERVER");
-
+      producers.forEach(({ kind, producerId, userData, paused }) => {
         handleConsume({
           roomId,
           producerId,
@@ -158,9 +161,19 @@ export default function MainPreview() {
           callback: (track) => {
             const stream = new MediaStream([track]);
             if (kind === "video") {
-              addRemoteStream({ stream, paused: false, producerId });
+              addRemoteStream({
+                stream,
+                paused,
+                producerId,
+                emitterId: userData.id,
+              });
             } else {
-              addRemoteAudioStream({ stream, paused: false, producerId });
+              addRemoteAudioStream({
+                stream,
+                paused,
+                producerId,
+                emitterId: userData.id,
+              });
             }
           },
         });
