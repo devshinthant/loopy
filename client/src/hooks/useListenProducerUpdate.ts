@@ -1,6 +1,6 @@
 import handleConsume from "@/lib/handleConsume";
 import { socket } from "@/lib/socket";
-import useConsumersStore from "@/store/consumers";
+import useConsumersStore, { type UserData } from "@/store/consumers";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
 import useRoomStore from "@/store/room";
@@ -26,19 +26,19 @@ export default function useListenProducerUpdate({
       producerId,
       kind,
       type,
+      producerData,
     }: {
       producerId: string;
       kind: "audio" | "video" | "both";
       type: "add" | "remove";
+      producerData: UserData;
     }) => {
       if (type === "add") {
         handleConsume({
           roomId,
           producerId,
           kind,
-          receiveTransport,
-          rtpCapabilities,
-          addConsumer,
+          producerData,
           callback: (track) => {
             const stream = new MediaStream([track]);
             if (kind === "video") {
@@ -55,13 +55,6 @@ export default function useListenProducerUpdate({
         } else if (kind === "audio") {
           removeRemoteAudioStream(producerId);
         }
-        //  else {
-        //   /* Both */
-        //   console.log("both", "removed", producerId);
-
-        //   removeRemoteStream(producerId);
-        //   removeRemoteAudioStream(producerId);
-        // }
       }
     };
 

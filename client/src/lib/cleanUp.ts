@@ -92,7 +92,7 @@ const cleanUp = () => {
 
   /* Close Consumers */
   const { consumers, resetConsumers } = useConsumersStore.getState();
-  consumers?.forEach((consumer) => consumer.close());
+  consumers?.forEach((consumer) => consumer.consumer.close());
   resetConsumers();
   console.log("Consumers Closed");
 };

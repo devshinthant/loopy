@@ -30,6 +30,8 @@ import cleanUp from "@/lib/cleanUp";
 import { toast } from "sonner";
 import { Loader, Video, Lock } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUser } from "@clerk/clerk-react";
+import Loading from "@/components/loading";
 
 const roomSchema = z.object({
   roomName: z.string().min(1, {
@@ -45,6 +47,8 @@ export default function Setup() {
 
   const { setRtpCapabilities, setDevice } = useRoomStore();
   const { setReceiveTransport, setProduceTransport } = useTransportsStore();
+
+  const { user, isLoaded } = useUser();
 
   const [loading, setLoading] = useState({
     joinRoom: false,
@@ -64,11 +68,22 @@ export default function Setup() {
       ...loading,
       joinRoom: true,
     });
+    if (!user) {
+      return toast.error("You are not logged in.");
+    }
+
     socket.emit(
       "joinRoom",
       {
         roomId: values.roomName,
         password: values.password,
+        userData: {
+          id: user.id,
+          name: user.fullName,
+          email: user.emailAddresses[0].emailAddress,
+          imageUrl: user.imageUrl,
+          isHost: false,
+        },
       },
       (data: { message: string; error: string; participantCount: number }) => {
         if (data.error) {
@@ -119,11 +134,23 @@ export default function Setup() {
 
     const values = form.getValues();
 
+    if (!user) {
+      return toast.error("You are not logged in.");
+    }
+    console.log({ user }, "ZZZ");
+
     socket.emit(
       "createRoom",
       {
         roomId: values.roomName,
         password: values.password,
+        userData: {
+          id: user.id,
+          name: user.fullName,
+          email: user.emailAddresses[0].emailAddress,
+          imageUrl: user.imageUrl,
+          isHost: true,
+        },
       },
       (data: { message: string; error: string }) => {
         if (data.error) {
@@ -181,6 +208,20 @@ export default function Setup() {
       cleanUp();
     });
   }, []);
+
+  if (!user) {
+    return (
+      <div>
+        <div>
+          <h1>You are not logged in.</h1>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return <Loading />;
+  }
 
   return (
     <div className="w-dvw h-dvh flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-black">

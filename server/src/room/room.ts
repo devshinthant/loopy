@@ -1,6 +1,6 @@
 import * as mediasoup from "mediasoup";
 import { AppData } from "mediasoup/node/lib/types";
-import Peer from "./peer";
+import Peer, { UserData } from "./peer";
 import { Socket } from "socket.io";
 
 type Router = mediasoup.types.Router<AppData> | undefined;
@@ -18,8 +18,8 @@ class Room {
     this.peers = new Map();
   }
 
-  addPeer(socket: Socket) {
-    this.peers?.set(socket.id, new Peer(socket));
+  addPeer(socket: Socket, userData: UserData) {
+    this.peers?.set(socket.id, new Peer(socket, userData));
   }
 
   removePeer(socket: Socket) {

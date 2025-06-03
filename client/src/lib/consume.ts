@@ -1,24 +1,28 @@
-import type {
-  AppData,
-  Consumer,
-  ConsumerOptions,
-  Transport,
-} from "mediasoup-client/types";
+import type { UserData } from "@/store/consumers";
+import useConsumersStore from "@/store/consumers";
+import useTransportsStore from "@/store/transports";
+import type { AppData, ConsumerOptions } from "mediasoup-client/types";
 
 interface ConsumeProps {
-  receiveTransport: Transport;
   consumer: ConsumerOptions<AppData>;
-  addConsumer: (consumers: Consumer) => void;
+  producerData: UserData;
 }
 
-const consume = async ({
-  receiveTransport,
-  consumer,
-  addConsumer,
-}: ConsumeProps) => {
+const consume = async ({ consumer, producerData }: ConsumeProps) => {
   try {
+    const { addConsumer } = useConsumersStore.getState();
+    const { receiveTransport } = useTransportsStore.getState();
+
+    if (!receiveTransport) {
+      return console.log("Waiting for transport...");
+    }
+
     const localConsumer = await receiveTransport.consume(consumer);
-    addConsumer(localConsumer);
+
+    addConsumer({
+      consumer: localConsumer,
+      userData: producerData,
+    });
     return localConsumer;
   } catch (error) {
     console.error("Error consuming:", error);

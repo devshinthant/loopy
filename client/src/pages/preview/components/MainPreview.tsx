@@ -5,7 +5,7 @@ import useListenProducerUpdate from "@/hooks/useListenProducerUpdate";
 import handleConsume from "@/lib/handleConsume";
 import produce from "@/lib/produce";
 import { socket } from "@/lib/socket";
-import useConsumersStore from "@/store/consumers";
+import type { UserData } from "@/store/consumers";
 import useLocalStreamStore from "@/store/local-streams";
 import useProducersStore from "@/store/producers";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
@@ -43,8 +43,6 @@ export default function MainPreview() {
   const { device, rtpCapabilities } = useRoomStore();
 
   const { receiveTransport } = useTransportsStore();
-
-  const { addConsumer } = useConsumersStore();
 
   const {
     localVideoStream,
@@ -146,17 +144,17 @@ export default function MainPreview() {
     const handleGetOtherProducers = ({
       producers,
     }: {
-      producers: { kind: string; producerId: string }[];
+      producers: { kind: string; producerId: string; userData: UserData }[];
     }) => {
       console.log({ producers }, "initial producers");
-      producers.forEach(({ kind, producerId }) => {
+      producers.forEach(({ kind, producerId, userData }) => {
+        console.log({ userData }, "FROM SERVER");
+
         handleConsume({
           roomId,
           producerId,
-          kind: "video",
-          receiveTransport,
-          rtpCapabilities,
-          addConsumer,
+          kind,
+          producerData: userData,
           callback: (track) => {
             const stream = new MediaStream([track]);
             if (kind === "video") {
@@ -178,7 +176,6 @@ export default function MainPreview() {
     rtpCapabilities,
     receiveTransport,
     roomId,
-    addConsumer,
     addRemoteStream,
     addRemoteAudioStream,
   ]);
@@ -187,8 +184,6 @@ export default function MainPreview() {
   useListenProducerUpdate({
     roomId,
   });
-
-  console.log({ micOpened, cameraOpened });
 
   return (
     <div className="lg:col-span-2">

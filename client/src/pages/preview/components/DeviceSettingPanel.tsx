@@ -34,6 +34,7 @@ export default function DeviceSettingPanel() {
     setAudioOutputs,
     setVideoInputs,
   } = useDeviceOptionsStore();
+
   const getCurrentDevice = (devices: MediaDeviceInfo[], selectedId: string) => {
     return devices.find((device) => device.deviceId === selectedId);
   };
@@ -42,13 +43,14 @@ export default function DeviceSettingPanel() {
     const fetchDevices = async () => {
       const { audioInputs, audioOutputs, videoInputs } =
         await getAvailableDevices();
+
       setAudioInputs(audioInputs);
       setAudioOutputs(audioOutputs);
       setVideoInputs(videoInputs);
 
-      setSelectedVideoInput(videoInputs[0].deviceId);
-      setSelectedAudioInput(audioInputs[0].deviceId);
-      setSelectedAudioOutput(audioOutputs[0].deviceId);
+      setSelectedVideoInput(videoInputs[0]?.deviceId || "");
+      setSelectedAudioInput(audioInputs[0]?.deviceId || "");
+      setSelectedAudioOutput(audioOutputs[0]?.deviceId || "");
     };
     fetchDevices();
   }, [

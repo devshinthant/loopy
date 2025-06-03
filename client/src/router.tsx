@@ -1,19 +1,24 @@
 import { createBrowserRouter } from "react-router";
-import Login from "./pages/auth/Login";
 import Setup from "./pages/setup";
 import Room from "./pages/room";
-import RootLayout from "./components/layout/RootLayout";
 import Preview from "./pages/preview";
+import SignInRoute from "./pages/auth/SignIn";
+import SignUpRoute from "./pages/auth/SignUp";
+import AuthenticatedLayout from "./components/layout/AuthenticatedLayout";
 
 const router = createBrowserRouter([
   {
+    path: "/sign-in",
+    element: <SignInRoute />,
+  },
+  {
+    path: "/sign-up",
+    element: <SignUpRoute />,
+  },
+  {
     path: "/",
-    element: <RootLayout />,
+    element: <AuthenticatedLayout />,
     children: [
-      {
-        path: "/login",
-        element: <Login />,
-      },
       {
         path: "/setup",
         element: <Setup />,

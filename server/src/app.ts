@@ -44,7 +44,7 @@ peers.on("connection", async (socket) => {
   socket.on(
     "createRoom",
     async (
-      { roomId, password },
+      { roomId, password, userData },
       callback: ({
         message,
         error,
@@ -53,6 +53,8 @@ peers.on("connection", async (socket) => {
         error?: string;
       }) => void
     ) => {
+      console.log({ userData }, "FROM SERVER");
+
       const room = rooms.get(roomId);
       if (room) {
         return callback({
@@ -70,7 +72,7 @@ peers.on("connection", async (socket) => {
       const newRoom = new Room(roomId, password, router);
       rooms.set(roomId, newRoom);
 
-      newRoom.addPeer(socket);
+      newRoom.addPeer(socket, userData);
 
       callback({
         message: "Room created",
@@ -78,8 +80,10 @@ peers.on("connection", async (socket) => {
     }
   );
 
-  socket.on("joinRoom", ({ roomId, password }, callback) => {
+  socket.on("joinRoom", ({ roomId, password, userData }, callback) => {
     const room = rooms.get(roomId);
+
+    console.log({ userData }, "FROM SERVER");
 
     if (!room) {
       return callback({
@@ -91,7 +95,7 @@ peers.on("connection", async (socket) => {
       return callback({ error: "Invalid password" });
     }
 
-    room.addPeer(socket);
+    room.addPeer(socket, userData);
     callback({
       message: "Joined room",
       participantCount: room.getPeers()?.size || 0,
@@ -201,6 +205,7 @@ peers.on("connection", async (socket) => {
           producerId: producer.id,
           kind: producer.kind,
           type: "add",
+          producerData: peer.data,
         });
       } catch (error) {
         callback({
@@ -362,6 +367,7 @@ peers.on("connection", async (socket) => {
           ? [
               {
                 kind: "video",
+                userData: peer.data,
                 producerId: peer.videoProducer?.id,
               },
             ]
