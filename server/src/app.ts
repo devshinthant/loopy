@@ -27,7 +27,13 @@ peers.on("connection", async (socket) => {
     socketId: socket.id,
   });
 
-  socket.on("leave-room", ({ roomId }) => {
+  socket.on("leave-room", ({ roomId, userId }) => {
+    socket.broadcast.emit("participant-update", {
+      participant: {
+        id: userId,
+      },
+      type: "remove",
+    });
     cleanUp({ socket, roomId });
   });
 
@@ -105,7 +111,10 @@ peers.on("connection", async (socket) => {
     const room = rooms.get(roomId);
     if (!room) return;
 
-    socket.broadcast.emit("participant-update", userData);
+    socket.broadcast.emit("participant-update", {
+      participant: userData,
+      type: "add",
+    });
     callback({
       message: "Entered room",
     });

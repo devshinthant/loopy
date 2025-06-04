@@ -1,6 +1,7 @@
 import useConsumersStore from "@/store/consumers";
 import useDeviceOptionsStore from "@/store/deviceOptions";
 import useLocalStreamStore from "@/store/local-streams";
+import { useParticipantsStore } from "@/store/participants";
 import useProducersStore from "@/store/producers";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
@@ -11,7 +12,7 @@ import useUserOptionsStore from "@/store/userOptions";
 const cleanUp = () => {
   console.log("Cleaning Up...");
 
-  // /* Clear Selected Devices */
+  /* Clear Selected Devices */
   const {
     resetSelectedAudioInput,
     resetSelectedAudioOutput,
@@ -22,7 +23,6 @@ const cleanUp = () => {
   resetSelectedVideoInput();
 
   /* Clear User Options */
-
   const { resetMicOpened, resetCameraOpened } = useUserOptionsStore.getState();
   resetMicOpened();
   resetCameraOpened();
@@ -35,7 +35,6 @@ const cleanUp = () => {
   resetVideoInputs();
 
   /* Close Transports */
-
   const {
     resetProduceTransport,
     resetReceiveTransport,
@@ -92,9 +91,14 @@ const cleanUp = () => {
 
   /* Close Consumers */
   const { consumers, resetConsumers } = useConsumersStore.getState();
-  consumers?.forEach((consumer) => consumer.consumer.close());
+  consumers?.forEach((consumer) => consumer.close());
   resetConsumers();
   console.log("Consumers Closed");
+
+  /* Reset Participants */
+  const { resetParticipants } = useParticipantsStore.getState();
+  resetParticipants();
+  console.log("Participants Reset");
 };
 
 export const testCleanUp = () => {

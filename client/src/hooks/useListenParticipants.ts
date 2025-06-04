@@ -1,5 +1,4 @@
 import { socket } from "@/lib/socket";
-import type { UserData } from "@/store/consumers";
 import { useParticipantsStore } from "@/store/participants";
 import { useEffect } from "react";
 
@@ -7,9 +6,19 @@ export default function useListenParticipants() {
   const { addParticipant, removeParticipant } = useParticipantsStore.getState();
 
   useEffect(() => {
-    const handleParticipantUpdate = (participant: UserData) => {
-      console.log({ participant });
-      addParticipant(participant);
+    const handleParticipantUpdate = ({
+      type,
+      participant,
+    }: {
+      type: "add" | "remove";
+      participant: UserData;
+    }) => {
+      console.log({ participant, type });
+      if (type === "add") {
+        addParticipant(participant);
+      } else {
+        removeParticipant(participant.id);
+      }
     };
 
     socket.on("participant-update", handleParticipantUpdate);

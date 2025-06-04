@@ -41,6 +41,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useUser } from "@clerk/clerk-react";
 
 export default function ControlBar() {
   const params = useParams();
@@ -49,6 +50,7 @@ export default function ControlBar() {
   const roomId = params.roomId as string;
 
   const { device } = useRoomStore();
+  const { user } = useUser();
 
   const { micOpened, cameraOpened, setCameraOpened, setMicOpened } =
     useUserOptionsStore();
@@ -178,6 +180,8 @@ export default function ControlBar() {
     });
     setMicOpened(false);
   };
+
+  if (!user) return null;
 
   return (
     <div className="flex py-3 items-center justify-between border-t border-gray-800 bg-gray-950 px-[5%]">
@@ -439,7 +443,7 @@ export default function ControlBar() {
           variant="outline"
           className="rounded-md border-gray-700 bg-gray-900 hover:bg-gray-800"
           onClick={() => {
-            socket.emit("leave-room", { roomId });
+            socket.emit("leave-room", { roomId, userId: user.id });
             cleanUp();
             navigate("/setup");
           }}
