@@ -10,12 +10,14 @@ class Room {
   password: string;
   router: Router;
   peers: Map<string, Peer> | undefined;
+  createdAt: number;
 
   constructor(id: string, password: string, router: Router) {
     this.id = id;
     this.password = password;
     this.router = router;
     this.peers = new Map();
+    this.createdAt = Date.now();
   }
 
   addPeer(socket: Socket, userData: UserData) {

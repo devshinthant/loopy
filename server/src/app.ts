@@ -57,6 +57,7 @@ peers.on("connection", async (socket) => {
       }: {
         message?: string;
         error?: string;
+        roomCreatedAt?: number;
       }) => void
     ) => {
       console.log({ userData }, "FROM SERVER");
@@ -82,6 +83,7 @@ peers.on("connection", async (socket) => {
 
       callback({
         message: "Room created",
+        roomCreatedAt: newRoom.createdAt,
       });
     }
   );
@@ -104,6 +106,7 @@ peers.on("connection", async (socket) => {
     callback({
       message: "Joined room",
       participantCount: (room.getPeers()?.size || 0) - 1,
+      roomCreatedAt: room.createdAt,
     });
   });
 

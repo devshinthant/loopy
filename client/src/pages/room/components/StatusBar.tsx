@@ -1,18 +1,15 @@
 import { Lock, Users } from "lucide-react";
 
-import { Clock } from "lucide-react";
 import RoomConnectionStatus from "./RoomConnectionStatus";
 import { useParticipantsStore } from "@/store/participants";
 import { useLocation, useParams } from "react-router";
-import { useUser } from "@clerk/clerk-react";
+import RoomDuration from "./RoomDuration";
 
 export default function StatusBar() {
   const { state } = useLocation();
   const { roomId } = useParams();
   const { participants: onlineParticipants } = useParticipantsStore();
-  const { user } = useUser();
-
-  const hostName = state.type === "create" ? user?.fullName : state.hostName;
+  const hostName = state.type === "create" ? "You" : state.hostName;
 
   return (
     <div
@@ -33,16 +30,7 @@ export default function StatusBar() {
 
         {/* Right side - Status indicators */}
         <div className="flex items-center gap-15">
-          {/* Meeting Duration */}
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-gray-800/30 backdrop-blur-sm ring-1 ring-gray-700/30">
-              <Clock className="h-4 w-4 text-blue-400" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-gray-200">2:30:45</span>
-              <span className="text-xs text-gray-400">Duration</span>
-            </div>
-          </div>
+          <RoomDuration />
 
           {/* Room ID */}
           <div className="flex items-center gap-2">

@@ -54,6 +54,9 @@ export default function VideoDisplay() {
             </Button>
           </div>
         )}
+        <p className="text-xs text-white font-semibold tracking-tight absolute bottom-2 left-2">
+          You
+        </p>
       </motion.div>
     </div>
   );

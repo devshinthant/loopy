@@ -18,8 +18,11 @@ export default function Preview() {
             <div className="flex items-center gap-2 bg-black/30 px-4 py-2 rounded-full">
               <Clock className="w-4 h-4" />
               <span>
-                {dateFns.format(new Date(), "hh:mm a")} -{" "}
-                {dateFns.format(dateFns.addMinutes(new Date(), 30), "hh:mm a")}
+                {dateFns.format(new Date(state.roomCreatedAt), "hh:mm a")} -{" "}
+                {dateFns.format(
+                  dateFns.addMinutes(new Date(state.roomCreatedAt), 30),
+                  "hh:mm a"
+                )}
               </span>
             </div>
             <div className="flex items-center gap-2 bg-black/30 px-4 py-2 rounded-full">

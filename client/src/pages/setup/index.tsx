@@ -85,7 +85,12 @@ export default function Setup() {
           isHost: false,
         },
       },
-      (data: { message: string; error: string; participantCount: number }) => {
+      (data: {
+        message: string;
+        error: string;
+        participantCount: number;
+        roomCreatedAt: string;
+      }) => {
         if (data.error) {
           setLoading({
             ...loading,
@@ -116,6 +121,7 @@ export default function Setup() {
           state: {
             roomId: values.roomName,
             participantCount: data.participantCount,
+            roomCreatedAt: data.roomCreatedAt,
           },
         });
       }
@@ -151,7 +157,7 @@ export default function Setup() {
           isHost: true,
         },
       },
-      (data: { message: string; error: string }) => {
+      (data: { message: string; error: string; roomCreatedAt: string }) => {
         if (data.error) {
           toast.error(data.error, {
             description: <p className="text-black">Please try again.</p>,
@@ -182,6 +188,7 @@ export default function Setup() {
         navigate(`/room/${values.roomName}`, {
           state: {
             type: "create",
+            roomCreatedAt: data.roomCreatedAt,
           },
         });
         toast.success("Room created.", {

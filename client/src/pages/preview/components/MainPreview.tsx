@@ -114,6 +114,7 @@ export default function MainPreview() {
   };
 
   const { setParticipants } = useParticipantsStore();
+
   async function handleJoinRoom() {
     if (!user) return;
     socket.emit("giveMeOthers", {
@@ -147,6 +148,7 @@ export default function MainPreview() {
             type: "join",
             roomId: state.roomId,
             hostName,
+            roomCreatedAt: state.roomCreatedAt,
           },
         });
 

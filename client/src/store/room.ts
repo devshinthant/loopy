@@ -15,7 +15,12 @@ interface RoomState {
 
 const initialState: Omit<
   RoomState,
-  "setRtpCapabilities" | "resetRtpCapabilities" | "setDevice" | "resetDevice"
+  | "setRtpCapabilities"
+  | "resetRtpCapabilities"
+  | "setDevice"
+  | "resetDevice"
+  | "setRoomCreatedAt"
+  | "resetRoomCreatedAt"
 > = {
   rtpCapabilities: null,
   device: null,
