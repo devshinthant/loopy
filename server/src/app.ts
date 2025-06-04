@@ -103,7 +103,7 @@ peers.on("connection", async (socket) => {
     room.addPeer(socket, userData);
     callback({
       message: "Joined room",
-      participantCount: room.getPeers()?.size || 0,
+      participantCount: (room.getPeers()?.size || 0) - 1,
     });
   });
 
@@ -115,8 +115,23 @@ peers.on("connection", async (socket) => {
       participant: userData,
       type: "add",
     });
+
+    const peers = room.getPeers();
+
+    if (!peers) {
+      return callback({
+        message: "No peers found",
+        hostName: undefined,
+      });
+    }
+
+    const host = Array.from(peers).find(([peerId, peer]) => {
+      return peer.data.isHost;
+    })?.[1];
+
     callback({
       message: "Entered room",
+      hostName: host?.data.name,
     });
   });
 

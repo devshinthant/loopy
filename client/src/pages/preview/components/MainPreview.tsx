@@ -130,7 +130,7 @@ export default function MainPreview() {
           imageUrl: user.imageUrl,
         },
       },
-      async ({ message }: { message: string }) => {
+      async ({ message, hostName }: { message: string; hostName: string }) => {
         toast.message(message);
 
         socket.emit(
@@ -146,6 +146,7 @@ export default function MainPreview() {
           state: {
             type: "join",
             roomId: state.roomId,
+            hostName,
           },
         });
 

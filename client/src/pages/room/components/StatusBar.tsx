@@ -2,8 +2,18 @@ import { Lock, Users } from "lucide-react";
 
 import { Clock } from "lucide-react";
 import RoomConnectionStatus from "./RoomConnectionStatus";
+import { useParticipantsStore } from "@/store/participants";
+import { useLocation, useParams } from "react-router";
+import { useUser } from "@clerk/clerk-react";
 
 export default function StatusBar() {
+  const { state } = useLocation();
+  const { roomId } = useParams();
+  const { participants: onlineParticipants } = useParticipantsStore();
+  const { user } = useUser();
+
+  const hostName = state.type === "create" ? user?.fullName : state.hostName;
+
   return (
     <div
       style={{
@@ -16,7 +26,7 @@ export default function StatusBar() {
         <div className="flex items-center gap-4">
           <div className="w-3.5 h-3.5 rounded-full bg-green-400"></div>
           <div className="flex flex-col items-start">
-            <h4 className="font-extrabold tracking-tight">John Doe</h4>
+            <h4 className="font-extrabold tracking-tight">{hostName}</h4>
             <p className="text-xs font-medium text-gray-400">Host</p>
           </div>
         </div>
@@ -41,7 +51,7 @@ export default function StatusBar() {
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-200">
-                Room: ABC123
+                Room: {roomId}
               </span>
               <span className="text-xs text-gray-400">Secure</span>
             </div>
@@ -56,7 +66,7 @@ export default function StatusBar() {
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-200">
-                6 Online
+                {onlineParticipants.length + 1} Online
               </span>
               <span className="text-xs text-gray-400">Participants</span>
             </div>
