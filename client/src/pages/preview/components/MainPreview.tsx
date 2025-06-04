@@ -5,8 +5,8 @@ import useListenProducerUpdate from "@/hooks/useListenProducerUpdate";
 import handleConsume from "@/lib/handleConsume";
 import produce from "@/lib/produce";
 import { socket } from "@/lib/socket";
-import type { UserData } from "@/store/consumers";
 import useLocalStreamStore from "@/store/local-streams";
+import { useParticipantsStore } from "@/store/participants";
 import useProducersStore from "@/store/producers";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
@@ -14,6 +14,7 @@ import useRoomStore from "@/store/room";
 import useSelectedDevicesStore from "@/store/selectedDevices";
 import useTransportsStore from "@/store/transports";
 import useUserOptionsStore from "@/store/userOptions";
+import { useUser } from "@clerk/clerk-react";
 import {
   Mic,
   MicOff,
@@ -26,10 +27,13 @@ import {
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 export default function MainPreview() {
   const navigate = useNavigate();
   const { state } = useLocation();
+
+  const { user } = useUser();
 
   const roomId = state.roomId;
 
@@ -109,32 +113,60 @@ export default function MainPreview() {
     setMicOpened(false);
   };
 
+  const { setParticipants } = useParticipantsStore();
   async function handleJoinRoom() {
+    if (!user) return;
     socket.emit("giveMeOthers", {
       roomId: state.roomId,
     });
-    navigate(`/room/${state.roomId}`, {
-      state: {
-        type: "join",
+    socket.emit(
+      "enter-room",
+      {
         roomId: state.roomId,
-      },
-    });
-    if (cameraOpened && produceTransport) {
-      await produce({
-        transport: produceTransport,
-        trackConfig: {
-          track: localVideoStream?.getVideoTracks()[0],
+        userData: {
+          id: user.id,
+          name: user.fullName,
+          email: user.emailAddresses[0].emailAddress,
+          imageUrl: user.imageUrl,
         },
-        setProducer: setVideoProducer,
-      });
-    }
-    if (micOpened && produceTransport) {
-      await produce({
-        transport: produceTransport,
-        trackConfig: { track: localAudioStream?.getAudioTracks()[0] },
-        setProducer: setAudioProducer,
-      });
-    }
+      },
+      async ({ message }: { message: string }) => {
+        toast.message(message);
+
+        socket.emit(
+          "get-initial-participants",
+          { roomId },
+          ({ participants }: { participants: UserData[] }) => {
+            console.log({ participants }, "Initial Participants");
+            setParticipants(participants);
+          }
+        );
+
+        navigate(`/room/${state.roomId}`, {
+          state: {
+            type: "join",
+            roomId: state.roomId,
+          },
+        });
+
+        if (cameraOpened && produceTransport) {
+          await produce({
+            transport: produceTransport,
+            trackConfig: {
+              track: localVideoStream?.getVideoTracks()[0],
+            },
+            setProducer: setVideoProducer,
+          });
+        }
+        if (micOpened && produceTransport) {
+          await produce({
+            transport: produceTransport,
+            trackConfig: { track: localAudioStream?.getAudioTracks()[0] },
+            setProducer: setAudioProducer,
+          });
+        }
+      }
+    );
   }
 
   /* Get Initial Producers */

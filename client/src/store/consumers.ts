@@ -1,24 +1,11 @@
 import type { Consumer } from "mediasoup-client/types";
 import { create } from "zustand";
 
-export type UserData = {
-  id: string;
-  name: string;
-  email: string;
-  imageUrl: string;
-  isHost: boolean;
-};
-
-export type AppConsumer = {
-  userData: UserData;
-  consumer: Consumer;
-};
-
 interface ConsumerState {
-  consumers: AppConsumer[];
-  setConsumers: (consumers: AppConsumer[]) => void;
+  consumers: Consumer[];
+  setConsumers: (consumers: Consumer[]) => void;
   resetConsumers: () => void;
-  addConsumer: (consumer: AppConsumer) => void;
+  addConsumer: (consumer: Consumer) => void;
 }
 
 const initialState: Omit<

@@ -94,11 +94,20 @@ peers.on("connection", async (socket) => {
     if (room.password !== password) {
       return callback({ error: "Invalid password" });
     }
-
     room.addPeer(socket, userData);
     callback({
       message: "Joined room",
       participantCount: room.getPeers()?.size || 0,
+    });
+  });
+
+  socket.on("enter-room", ({ roomId, userData }, callback) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    socket.broadcast.emit("participant-update", userData);
+    callback({
+      message: "Entered room",
     });
   });
 
@@ -382,6 +391,26 @@ peers.on("connection", async (socket) => {
 
     socket.emit("getOtherProducers", {
       producers,
+    });
+  });
+
+  socket.on("get-initial-participants", ({ roomId }, callback) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const peers = room.getPeers();
+    if (!peers) return;
+
+    const participants = Array.from(peers)
+      .filter(([peerId, peer]) => {
+        console.log({ peer });
+
+        return peerId !== socket.id;
+      })
+      .map(([, peer]) => peer.data);
+
+    callback({
+      participants,
     });
   });
 

@@ -1,5 +1,4 @@
 import useLocalStreamStore from "@/store/local-streams";
-import useRemoteStreamStore from "@/store/remote-streams";
 import useUserOptionsStore from "@/store/userOptions";
 
 import { motion } from "motion/react";
@@ -9,20 +8,21 @@ import { useUser } from "@clerk/clerk-react";
 import VideoOff from "@/components/VideoOff";
 import { MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useParticipantsStore } from "@/store/participants";
 
 export default function VideoDisplay() {
   const { localVideoStream } = useLocalStreamStore();
   const { cameraOpened, micOpened } = useUserOptionsStore();
 
-  const { user } = useUser();
+  const { participants } = useParticipantsStore();
 
-  const { remoteStreams } = useRemoteStreamStore();
+  const { user } = useUser();
 
   return (
     <div className="bg-gradient-to-br from-black via-gray-900 to-black overflow-hidden flex-1 h-full w-full">
       <div className="w-full h-full gap-5 px-[5%] py-10 flex items-center">
-        {remoteStreams?.map((stream) => {
-          return <DisplayBox {...stream} />;
+        {participants.map((stream) => {
+          return <DisplayBox key={stream.id} {...stream} />;
         })}
       </div>
       <motion.div

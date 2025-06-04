@@ -1,51 +1,44 @@
 import { Button } from "@/components/ui/button";
 import VideoOff from "@/components/VideoOff";
-import { getProducerInfo } from "@/lib/getProducerInfo";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
-import type { RemoteStream } from "@/store/remote-streams";
+import useRemoteStreamStore from "@/store/remote-streams";
 import { MicOff } from "lucide-react";
 
-import { useExtractColors } from "react-extract-colors";
-
-export default function DisplayBox({
-  stream,
-  paused,
-  producerId,
-}: RemoteStream) {
-  const userInfo = getProducerInfo({ producerId });
-  const { colors } = useExtractColors(userInfo?.imageUrl || "");
-  const gradientBg = `linear-gradient(135deg, ${colors[0]}, ${
-    colors[1] || colors[0]
-  })`;
-  const { remoteAudioStreams } = useRemoteAudioStreamStore();
-  const audioStream = remoteAudioStreams?.find(
-    (stream) => stream.emitterId === userInfo?.id
+export default function DisplayBox(data: UserData) {
+  const { remoteStreams } = useRemoteStreamStore();
+  const videoStream = remoteStreams?.find(
+    (stream) => stream.emitterId === data.id
   );
 
+  const { remoteAudioStreams } = useRemoteAudioStreamStore();
+  const audioStream = remoteAudioStreams?.find(
+    (stream) => stream.emitterId === data.id
+  );
+
+  console.log({ data });
+
   return (
-    <div
-      key={stream.id}
-      style={{
-        background: paused ? gradientBg : "transparent",
-      }}
-      className="w-full rounded-md overflow-hidden relative h-full"
-    >
-      {!paused && (
+    <div className="w-full rounded-md bg-transparent overflow-hidden relative h-full">
+      {videoStream && !videoStream?.paused && (
         <video
           ref={(el) => {
-            if (el) el.srcObject = stream;
+            if (el && videoStream) el.srcObject = videoStream.stream;
           }}
           autoPlay
           playsInline
           className="w-full h-full object-cover"
           muted={false}
           style={{
-            filter: paused ? "grayscale(100%) brightness( 0.5)" : "none",
+            filter: videoStream?.paused
+              ? "grayscale(100%) brightness( 0.5)"
+              : "none",
           }}
         />
       )}
 
-      {paused && <VideoOff local={false} imageUrl={userInfo?.imageUrl || ""} />}
+      {(!videoStream || videoStream?.paused) && (
+        <VideoOff local={false} imageUrl={data.imageUrl || ""} />
+      )}
 
       {(!audioStream || audioStream?.paused) && (
         <div className="absolute top-2 right-2">
@@ -59,7 +52,7 @@ export default function DisplayBox({
       )}
 
       <p className="absolute text-white bottom-2 left-2 text-xs font-semibold">
-        {userInfo?.name || "Guest"}
+        {data.name || "Guest"}
       </p>
     </div>
   );

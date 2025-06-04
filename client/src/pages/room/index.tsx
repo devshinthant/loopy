@@ -9,6 +9,7 @@ import VideoDisplay from "./components/VideoDisplay";
 import ControlBar from "./components/ControlBar";
 import AudioStreams from "./components/AudioStreams";
 import StatusBar from "./components/StatusBar";
+import useListenParticipants from "@/hooks/useListenParticipants";
 
 export default function Room() {
   const params = useParams();
@@ -24,9 +25,13 @@ export default function Room() {
   const { pauseRemoteAudioStream, resumeRemoteAudioStream } =
     useRemoteAudioStreamStore();
 
+  /* Listen Producers */
   useListenProducerUpdate({
     roomId,
   });
+
+  /* Listen Participants */
+  useListenParticipants();
 
   /* Handle Pause/Resume */
   useEffect(() => {
