@@ -1,6 +1,7 @@
 import { Lock, Users } from "lucide-react";
 
-import { Clock, Wifi } from "lucide-react";
+import { Clock } from "lucide-react";
+import RoomConnectionStatus from "./RoomConnectionStatus";
 
 export default function StatusBar() {
   return (
@@ -46,16 +47,7 @@ export default function StatusBar() {
             </div>
           </div>
 
-          {/* Connection Status */}
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-green-500/10 backdrop-blur-sm ring-1 ring-green-500/20">
-              <Wifi className="h-4 w-4 text-green-400" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-gray-200">Good</span>
-              <span className="text-xs text-gray-400">Connection</span>
-            </div>
-          </div>
+          <RoomConnectionStatus />
 
           {/* Participant Count */}
           <div className="flex items-center gap-2">
