@@ -4,10 +4,12 @@ import RoomConnectionStatus from "./RoomConnectionStatus";
 import { useParticipantsStore } from "@/store/participants";
 import { useLocation, useParams } from "react-router";
 import RoomDuration from "./RoomDuration";
+import { UserButton, useUser } from "@clerk/clerk-react";
 
 export default function StatusBar() {
   const { state } = useLocation();
   const { roomId } = useParams();
+  const { user } = useUser();
   const { participants: onlineParticipants } = useParticipantsStore();
   const hostName = state.type === "create" ? "You" : state.hostName;
 
@@ -59,6 +61,8 @@ export default function StatusBar() {
               <span className="text-xs text-gray-400">Participants</span>
             </div>
           </div>
+
+          <div className="w-fit h-fit">{user ? <UserButton /> : null}</div>
         </div>
       </div>
     </div>

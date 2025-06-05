@@ -18,19 +18,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import { useNavigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 
 import { socket } from "@/lib/socket";
 import setUpRouter from "@/lib/setUpRouter";
 import useRoomStore from "@/store/room";
 import useTransportsStore from "@/store/transports";
-import cleanUp from "@/lib/cleanUp";
 import { toast } from "sonner";
 import { Loader, Video, Lock } from "lucide-react";
 import { motion } from "framer-motion";
-import { useUser } from "@clerk/clerk-react";
+import { UserButton, useUser } from "@clerk/clerk-react";
 import Loading from "@/components/loading";
 
 const roomSchema = z.object({
@@ -202,19 +201,6 @@ export default function Setup() {
     );
   }
 
-  useEffect(() => {
-    socket.on("connection-success", (data) => {
-      console.log(data);
-    });
-  }, []);
-
-  useEffect(() => {
-    socket.on("disconnect", () => {
-      console.log("Disconnected");
-      cleanUp();
-    });
-  }, []);
-
   if (!user) {
     return (
       <div>
@@ -225,12 +211,16 @@ export default function Setup() {
     );
   }
 
+  if (!socket.connected) {
+    return <Navigate to="/socket-error" />;
+  }
+
   if (!isLoaded) {
     return <Loading />;
   }
 
   return (
-    <div className="w-dvw h-dvh flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-black">
+    <div className="w-dvw h-dvh relative flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-black">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -343,6 +333,10 @@ export default function Setup() {
           </CardContent>
         </Card>
       </motion.div>
+
+      <div className="absolute right-10 top-10 ">
+        {user ? <UserButton /> : null}
+      </div>
     </div>
   );
 }

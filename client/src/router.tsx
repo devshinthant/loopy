@@ -5,6 +5,7 @@ import Preview from "./pages/preview";
 import SignInRoute from "./pages/auth/SignIn";
 import SignUpRoute from "./pages/auth/SignUp";
 import AuthenticatedLayout from "./components/layout/AuthenticatedLayout";
+import { SocketErrorPage } from "./pages/errors/socket-error";
 
 const router = createBrowserRouter([
   {
@@ -16,11 +17,15 @@ const router = createBrowserRouter([
     element: <SignUpRoute />,
   },
   {
+    path: "/socket-error",
+    element: <SocketErrorPage />,
+  },
+  {
     path: "/",
     element: <AuthenticatedLayout />,
     children: [
       {
-        path: "/setup",
+        path: "/",
         element: <Setup />,
       },
       {

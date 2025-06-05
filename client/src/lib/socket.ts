@@ -6,4 +6,6 @@ const URL =
     ? undefined
     : "http://localhost:4000/mediasoup";
 
-export const socket = io(URL);
+export const socket = io(URL, {
+  autoConnect: true,
+});
