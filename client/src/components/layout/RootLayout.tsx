@@ -14,7 +14,7 @@ export default function RootLayout({
   }
 
   return (
-    <div className="h-dvh relative w-dvw">
+    <div className="h-dvh relative overflow-hidden w-dvw">
       <div className="absolute right-10 top-10 ">
         {user ? <UserButton /> : null}
       </div>

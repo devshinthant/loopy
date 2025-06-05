@@ -9,8 +9,10 @@ import VideoOff from "@/components/VideoOff";
 import { MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useParticipantsStore } from "@/store/participants";
+import { useRef } from "react";
 
 export default function VideoDisplay() {
+  const constraintsRef = useRef<HTMLDivElement>(null);
   const { localVideoStream } = useLocalStreamStore();
   const { cameraOpened, micOpened } = useUserOptionsStore();
 
@@ -19,7 +21,10 @@ export default function VideoDisplay() {
   const { user } = useUser();
 
   return (
-    <div className="bg-gradient-to-br from-black via-gray-900 to-black overflow-hidden flex-1 h-full w-full">
+    <motion.div
+      ref={constraintsRef}
+      className="bg-gradient-to-br from-black via-gray-900 to-black overflow-hidden flex-1 h-full w-full"
+    >
       <div className="w-full h-full gap-5 px-[5%] py-10 flex items-center">
         {participants.map((stream) => {
           return <DisplayBox key={stream.id} {...stream} />;
@@ -27,8 +32,10 @@ export default function VideoDisplay() {
       </div>
       <motion.div
         drag
+        dragConstraints={constraintsRef}
         dragMomentum={false}
-        className="absolute h-[200px] border border-gray-800 rounded-md overflow-hidden bottom-20 right-10 w-[300px]"
+        dragElastic={0.1}
+        className="absolute h-[200px] cursor-grab border border-gray-800 rounded-md overflow-hidden bottom-20 right-10 w-[300px]"
       >
         {cameraOpened ? (
           <video
@@ -58,6 +65,6 @@ export default function VideoDisplay() {
           You
         </p>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
