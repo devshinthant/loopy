@@ -1,11 +1,9 @@
 import type { AppData, ConsumerOptions } from "mediasoup-client/types";
 import { socket } from "./socket";
 import consume from "./consume";
-import type { UserData } from "@/store/consumers";
 import useRoomStore from "@/store/room";
 
 interface HandleConsumeProps {
-  producerData: UserData;
   roomId: string;
   producerId: string;
   kind: string;
@@ -17,7 +15,6 @@ const handleConsume = ({
   producerId,
   kind,
   callback,
-  producerData,
 }: HandleConsumeProps) => {
   const { rtpCapabilities } = useRoomStore.getState();
 
@@ -41,7 +38,6 @@ const handleConsume = ({
 
         const localConsumer = await consume({
           consumer,
-          producerData,
         });
 
         try {

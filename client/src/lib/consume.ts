@@ -1,14 +1,12 @@
-import type { UserData } from "@/store/consumers";
 import useConsumersStore from "@/store/consumers";
 import useTransportsStore from "@/store/transports";
 import type { AppData, ConsumerOptions } from "mediasoup-client/types";
 
 interface ConsumeProps {
   consumer: ConsumerOptions<AppData>;
-  producerData: UserData;
 }
 
-const consume = async ({ consumer, producerData }: ConsumeProps) => {
+const consume = async ({ consumer }: ConsumeProps) => {
   try {
     const { addConsumer } = useConsumersStore.getState();
     const { receiveTransport } = useTransportsStore.getState();
@@ -19,10 +17,7 @@ const consume = async ({ consumer, producerData }: ConsumeProps) => {
 
     const localConsumer = await receiveTransport.consume(consumer);
 
-    addConsumer({
-      consumer: localConsumer,
-      userData: producerData,
-    });
+    addConsumer(localConsumer);
     return localConsumer;
   } catch (error) {
     console.error("Error consuming:", error);

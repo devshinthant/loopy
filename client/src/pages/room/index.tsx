@@ -87,7 +87,7 @@ export default function Room() {
   /* End Room */
   useEffect(() => {
     const handleEndRoom = () => {
-      navigate("/setup");
+      navigate("/");
     };
     socket.on("room-ended", handleEndRoom);
 
@@ -97,7 +97,7 @@ export default function Room() {
   }, [navigate]);
 
   if (!roomId) {
-    redirect("/setup");
+    redirect("/");
     return <div>Room not found</div>;
   }
 

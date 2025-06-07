@@ -20,8 +20,8 @@ createRoot(document.getElementById("root")!).render(
       signUpUrl="/sign-up"
       publishableKey={PUBLISHABLE_KEY}
       afterSignOutUrl="/sign-in"
-      signInFallbackRedirectUrl="/setup"
-      signUpFallbackRedirectUrl="/setup"
+      signInFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
     >
       <RouterProvider router={router} />
     </ClerkProvider>

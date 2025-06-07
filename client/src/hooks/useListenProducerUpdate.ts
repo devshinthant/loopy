@@ -1,6 +1,5 @@
 import handleConsume from "@/lib/handleConsume";
 import { socket } from "@/lib/socket";
-import useConsumersStore from "@/store/consumers";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
 import useRoomStore from "@/store/room";
@@ -19,7 +18,6 @@ export default function useListenProducerUpdate({
   const { addRemoteStream, removeRemoteStream } = useRemoteStreamStore();
   const { addRemoteAudioStream, removeRemoteAudioStream } =
     useRemoteAudioStreamStore();
-  const { addConsumer } = useConsumersStore();
 
   useEffect(() => {
     const onNewProducer = ({
@@ -38,7 +36,6 @@ export default function useListenProducerUpdate({
           roomId,
           producerId,
           kind,
-          producerData,
           callback: (track) => {
             const stream = new MediaStream([track]);
             if (kind === "video") {
@@ -77,7 +74,6 @@ export default function useListenProducerUpdate({
     receiveTransport,
     roomId,
     rtpCapabilities,
-    addConsumer,
     addRemoteStream,
     addRemoteAudioStream,
     removeRemoteStream,
