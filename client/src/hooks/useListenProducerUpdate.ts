@@ -1,6 +1,6 @@
 import handleConsume from "@/lib/handleConsume";
 import { socket } from "@/lib/socket";
-import useConsumersStore, { type UserData } from "@/store/consumers";
+import useConsumersStore from "@/store/consumers";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
 import useRoomStore from "@/store/room";

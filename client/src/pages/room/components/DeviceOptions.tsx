@@ -56,9 +56,9 @@ export default function DeviceOptions({ roomId, type }: DeviceSettingsProps) {
       // Note: Audio output device change is handled differently
       // as it doesn't involve mediasoup producers
       const audioElements = document.querySelectorAll("audio");
-      audioElements.forEach((audio) => {
+      audioElements.forEach(async (audio) => {
         if (audio.setSinkId) {
-          audio.setSinkId(deviceId);
+          await audio.setSinkId(deviceId);
         }
       });
       setSelectedAudioOutput(deviceId);
