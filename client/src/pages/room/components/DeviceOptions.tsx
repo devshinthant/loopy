@@ -14,9 +14,10 @@ import { useDeviceManager } from "@/hooks/useDeviceManager";
 
 interface DeviceSettingsProps {
   roomId: string;
+  type: "audio" | "video" | "audio-output";
 }
 
-export default function DeviceSettings({ roomId }: DeviceSettingsProps) {
+export default function DeviceOptions({ roomId, type }: DeviceSettingsProps) {
   const { audioInputs, videoInputs, audioOutputs } = useDeviceOptionsStore();
 
   const {
@@ -69,60 +70,53 @@ export default function DeviceSettings({ roomId }: DeviceSettingsProps) {
   };
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium">Audio Input</label>
+        <label className="text-sm text-white font-medium">
+          {type === "audio"
+            ? "Audio Input"
+            : type === "video"
+            ? "Video Input"
+            : "Audio Output"}
+        </label>
         <Select
-          value={selectedAudioInput}
-          onValueChange={handleAudioInputChange}
+          value={
+            type === "audio"
+              ? selectedAudioInput
+              : type === "video"
+              ? selectedVideoInput
+              : selectedAudioOutput
+          }
+          onValueChange={
+            type === "audio"
+              ? handleAudioInputChange
+              : type === "video"
+              ? handleVideoInputChange
+              : handleAudioOutputChange
+          }
         >
-          <SelectTrigger>
+          <SelectTrigger className="bg-gray-900 border mt-1 w-full border-gray-700 text-white">
             <SelectValue placeholder="Select audio input" />
           </SelectTrigger>
           <SelectContent>
-            {audioInputs.map((device) => (
-              <SelectItem key={device.deviceId} value={device.deviceId}>
-                {device.label || `Microphone ${device.deviceId.slice(0, 5)}`}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Video Input</label>
-        <Select
-          value={selectedVideoInput}
-          onValueChange={handleVideoInputChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select video input" />
-          </SelectTrigger>
-          <SelectContent>
-            {videoInputs.map((device) => (
-              <SelectItem key={device.deviceId} value={device.deviceId}>
-                {device.label || `Camera ${device.deviceId.slice(0, 5)}`}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Audio Output</label>
-        <Select
-          value={selectedAudioOutput}
-          onValueChange={handleAudioOutputChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select audio output" />
-          </SelectTrigger>
-          <SelectContent>
-            {audioOutputs.map((device) => (
-              <SelectItem key={device.deviceId} value={device.deviceId}>
-                {device.label || `Speaker ${device.deviceId.slice(0, 5)}`}
-              </SelectItem>
-            ))}
+            {type === "audio" &&
+              audioInputs.map((device) => (
+                <SelectItem key={device.deviceId} value={device.deviceId}>
+                  {device.label || `Microphone ${device.deviceId.slice(0, 5)}`}
+                </SelectItem>
+              ))}
+            {type === "video" &&
+              videoInputs.map((device) => (
+                <SelectItem key={device.deviceId} value={device.deviceId}>
+                  {device.label || `Camera ${device.deviceId.slice(0, 5)}`}
+                </SelectItem>
+              ))}
+            {type === "audio-output" &&
+              audioOutputs.map((device) => (
+                <SelectItem key={device.deviceId} value={device.deviceId}>
+                  {device.label || `Speaker ${device.deviceId.slice(0, 5)}`}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>

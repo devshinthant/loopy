@@ -41,7 +41,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUser } from "@clerk/clerk-react";
-import DeviceSettings from "./DeviceSettings";
+import DeviceOptions from "./DeviceOptions";
+import useSelectedDevicesStore from "@/store/selectedDevices";
 
 export default function ControlBar() {
   const params = useParams();
@@ -52,6 +53,7 @@ export default function ControlBar() {
   const { device } = useRoomStore();
   const { user } = useUser();
 
+  const { selectedAudioInput, selectedVideoInput } = useSelectedDevicesStore();
   const { micOpened, cameraOpened, setCameraOpened, setMicOpened } =
     useUserOptionsStore();
 
@@ -82,7 +84,9 @@ export default function ControlBar() {
       let stream = localVideoStream;
 
       if (!stream) {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: selectedVideoInput } },
+        });
         setLocalVideoStream(stream);
       }
 
@@ -136,7 +140,7 @@ export default function ControlBar() {
       let stream = localAudioStream;
       if (!stream) {
         stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
+          audio: { deviceId: { exact: selectedAudioInput } },
         });
         setLocalAudioStream(stream);
       }
@@ -232,7 +236,7 @@ export default function ControlBar() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-gray-700" />
               <div className="p-2">
-                <DeviceSettings roomId={roomId} />
+                <DeviceOptions roomId={roomId} type="audio" />
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -278,13 +282,13 @@ export default function ControlBar() {
                 <ChevronDown className="h-4 w-4 text-white" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72 bg-gray-900 border border-gray-700">
+            <DropdownMenuContent className="w-80 bg-gray-900 border border-gray-700">
               <DropdownMenuLabel className="text-gray-200! font-medium">
                 Camera Settings
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-gray-700" />
               <div className="p-2">
-                <DeviceSettings roomId={roomId} />
+                <DeviceOptions roomId={roomId} type="video" />
               </div>
             </DropdownMenuContent>
           </DropdownMenu>

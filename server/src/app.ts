@@ -475,6 +475,7 @@ peers.on("connection", async (socket) => {
     } else {
       await peer.videoProducer?.resume();
     }
+    console.log("server producer-resumed", { producerId, roomId, kind });
     socket.broadcast.emit("peer-producer-resumed", {
       producerId,
       peerId: socket.id,

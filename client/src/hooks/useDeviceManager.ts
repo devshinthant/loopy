@@ -20,7 +20,7 @@ export const useDeviceManager = ({ roomId }: DeviceManagerProps) => {
   const { setCameraOpened, setMicOpened } = useUserOptionsStore.getState();
 
   const changeVideoDevice = async (newDeviceId: string) => {
-    if (!produceTransport || !videoProducer) return;
+    if (!produceTransport) return;
 
     try {
       // Pause current video stream
@@ -29,6 +29,15 @@ export const useDeviceManager = ({ roomId }: DeviceManagerProps) => {
           .getVideoTracks()
           .forEach((track) => (track.enabled = false));
       }
+
+      if (!videoProducer) {
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: newDeviceId } },
+        });
+        setLocalVideoStream(newStream);
+        return true;
+      }
+
       videoProducer.pause();
       socket.emit("producer-paused", {
         producerId: videoProducer.id,
@@ -68,7 +77,7 @@ export const useDeviceManager = ({ roomId }: DeviceManagerProps) => {
   };
 
   const changeAudioDevice = async (newDeviceId: string) => {
-    if (!produceTransport || !audioProducer) return;
+    if (!produceTransport) return;
 
     try {
       // Pause current audio stream
@@ -77,6 +86,15 @@ export const useDeviceManager = ({ roomId }: DeviceManagerProps) => {
           .getAudioTracks()
           .forEach((track) => (track.enabled = false));
       }
+
+      if (!audioProducer) {
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          audio: { deviceId: { exact: newDeviceId } },
+        });
+        setLocalAudioStream(newStream);
+        return true;
+      }
+
       audioProducer.pause();
       socket.emit("producer-paused", {
         producerId: audioProducer.id,
@@ -107,7 +125,6 @@ export const useDeviceManager = ({ roomId }: DeviceManagerProps) => {
       // Update local stream store
       setLocalAudioStream(newStream);
       setMicOpened(true);
-
       return true;
     } catch (error) {
       console.error("Error changing audio device:", error);
