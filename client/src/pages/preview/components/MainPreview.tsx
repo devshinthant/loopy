@@ -185,7 +185,6 @@ export default function MainPreview() {
           roomId,
           producerId,
           kind,
-          producerData: userData,
           callback: (track) => {
             const stream = new MediaStream([track]);
             if (kind === "video") {

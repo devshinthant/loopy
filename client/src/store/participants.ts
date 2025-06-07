@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import type { UserData } from "./consumers";
 
 type ParticipantState = {
   participants: UserData[];

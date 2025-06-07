@@ -18,8 +18,7 @@ export default function Room() {
   const roomId = params.roomId as string;
 
   /* Remote Video Streams */
-  const { remoteStreams, pauseRemoteStream, resumeRemoteStream } =
-    useRemoteStreamStore();
+  const { pauseRemoteStream, resumeRemoteStream } = useRemoteStreamStore();
 
   /* Remote Audio Streams */
   const { pauseRemoteAudioStream, resumeRemoteAudioStream } =
@@ -35,8 +34,6 @@ export default function Room() {
 
   /* Handle Pause/Resume */
   useEffect(() => {
-    if (!remoteStreams) return;
-
     const handlePeerProducerPaused = ({
       producerId,
       kind,
@@ -77,7 +74,6 @@ export default function Room() {
       socket.off("peer-producer-resumed", handlePeerProducerResumed);
     };
   }, [
-    remoteStreams,
     pauseRemoteStream,
     resumeRemoteStream,
     resumeRemoteAudioStream,
