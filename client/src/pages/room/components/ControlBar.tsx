@@ -7,7 +7,6 @@ import {
   Smile,
   Users,
   ChevronDown,
-  Settings,
   Mic,
   MicOff,
   Video,
@@ -42,6 +41,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUser } from "@clerk/clerk-react";
+import DeviceSettings from "./DeviceSettings";
 
 export default function ControlBar() {
   const params = useParams();
@@ -226,22 +226,14 @@ export default function ControlBar() {
                 <ChevronDown className="h-4 w-4 text-white" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-gray-900 border border-gray-700">
+            <DropdownMenuContent className="w-72 bg-gray-900 border border-gray-700">
               <DropdownMenuLabel className="text-gray-200! font-medium">
                 Microphone Settings
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-gray-700" />
-              <DropdownMenuItem className="text-gray-200! hover:bg-gray-800! cursor-pointer">
-                <Settings className="h-4 w-4 mr-2" />
-                <span>Audio Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-gray-200! hover:bg-gray-800! cursor-pointer">
-                <span>Select Input Device</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-gray-700" />
-              <DropdownMenuItem className="text-gray-200! hover:bg-gray-800! cursor-pointer">
-                <span>Test Microphone</span>
-              </DropdownMenuItem>
+              <div className="p-2">
+                <DeviceSettings roomId={roomId} />
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -286,25 +278,14 @@ export default function ControlBar() {
                 <ChevronDown className="h-4 w-4 text-white" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-gray-900 border border-gray-700">
+            <DropdownMenuContent className="w-72 bg-gray-900 border border-gray-700">
               <DropdownMenuLabel className="text-gray-200! font-medium">
                 Camera Settings
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-gray-700" />
-              <DropdownMenuItem className="text-gray-200! hover:bg-gray-800! cursor-pointer">
-                <Settings className="h-4 w-4 mr-2" />
-                <span>Video Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-gray-200! hover:bg-gray-800! cursor-pointer">
-                <span>Select Camera</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-gray-700" />
-              <DropdownMenuItem className="text-gray-200! hover:bg-gray-800! cursor-pointer">
-                <span>Background Effects</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-gray-200! hover:bg-gray-800! cursor-pointer">
-                <span>Mirror Video</span>
-              </DropdownMenuItem>
+              <div className="p-2">
+                <DeviceSettings roomId={roomId} />
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -445,7 +426,7 @@ export default function ControlBar() {
           onClick={() => {
             socket.emit("leave-room", { roomId, userId: user.id });
             cleanUp();
-            navigate("/setup");
+            navigate("/");
           }}
         >
           <LogOut className="h-5 w-5 text-white" />
@@ -460,7 +441,7 @@ export default function ControlBar() {
           onClick={() => {
             socket.emit("end-room", { roomId });
             cleanUp();
-            navigate("/setup");
+            navigate("/");
           }}
         >
           <CircleX className="h-5 w-5 text-white" />

@@ -25,7 +25,7 @@ import {
   Video,
   VideoOff,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -61,11 +61,7 @@ export default function MainPreview() {
 
   const { selectedAudioInput, selectedVideoInput } = useSelectedDevicesStore();
 
-  const previewVideoRef = useRef<HTMLVideoElement>(null);
-
   const handleCameraOpen = async () => {
-    if (!previewVideoRef.current) return;
-
     let stream = localVideoStream;
 
     if (stream) {
@@ -79,15 +75,12 @@ export default function MainPreview() {
       setLocalVideoStream(stream);
     }
 
-    previewVideoRef.current.srcObject = stream;
-
     setCameraOpened(true);
   };
 
   const handleCameraClose = () => {
-    if (!previewVideoRef.current) return;
-    const stream = previewVideoRef.current.srcObject as MediaStream;
-    const tracks = stream.getTracks();
+    if (!localVideoStream) return;
+    const tracks = localVideoStream.getTracks();
     tracks.forEach((track) => (track.enabled = false));
     setCameraOpened(false);
   };
@@ -252,7 +245,9 @@ export default function MainPreview() {
             )}
             <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
               <video
-                ref={previewVideoRef}
+                ref={(el) => {
+                  if (el && localVideoStream) el.srcObject = localVideoStream;
+                }}
                 autoPlay
                 playsInline
                 className="w-full h-full object-cover"

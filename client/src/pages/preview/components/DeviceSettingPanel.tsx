@@ -10,11 +10,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import getAvailableDevices from "@/lib/getAvailableDevices";
+import useFetchDevices from "@/hooks/useFetchDevices";
 import useDeviceOptionsStore from "@/store/deviceOptions";
+import useLocalStreamStore from "@/store/local-streams";
 import useSelectedDevicesStore from "@/store/selectedDevices";
 import { Camera, Mic, Settings, Volume2 } from "lucide-react";
-import { useEffect } from "react";
 
 export default function DeviceSettingPanel() {
   const {
@@ -26,41 +26,56 @@ export default function DeviceSettingPanel() {
     setSelectedAudioOutput,
   } = useSelectedDevicesStore();
 
-  const {
-    videoInputs,
-    audioInputs,
-    audioOutputs,
-    setAudioInputs,
-    setAudioOutputs,
-    setVideoInputs,
-  } = useDeviceOptionsStore();
+  const { videoInputs, audioInputs, audioOutputs } = useDeviceOptionsStore();
 
   const getCurrentDevice = (devices: MediaDeviceInfo[], selectedId: string) => {
     return devices.find((device) => device.deviceId === selectedId);
   };
 
-  useEffect(() => {
-    const fetchDevices = async () => {
-      const { audioInputs, audioOutputs, videoInputs } =
-        await getAvailableDevices();
+  useFetchDevices();
 
-      setAudioInputs(audioInputs);
-      setAudioOutputs(audioOutputs);
-      setVideoInputs(videoInputs);
+  const {
+    localAudioStream,
+    setLocalAudioStream,
+    localVideoStream,
+    setLocalVideoStream,
+  } = useLocalStreamStore.getState();
 
-      setSelectedVideoInput(videoInputs[0]?.deviceId || "");
-      setSelectedAudioInput(audioInputs[0]?.deviceId || "");
-      setSelectedAudioOutput(audioOutputs[0]?.deviceId || "");
-    };
-    fetchDevices();
-  }, [
-    setAudioInputs,
-    setAudioOutputs,
-    setVideoInputs,
-    setSelectedAudioInput,
-    setSelectedAudioOutput,
-    setSelectedVideoInput,
-  ]);
+  const onAudioInputChange = async (value: string) => {
+    setSelectedAudioInput(value);
+
+    if (!localAudioStream) return;
+    localAudioStream
+      .getAudioTracks()
+      .forEach((track) => (track.enabled = false));
+
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      audio: { deviceId: { exact: value } },
+    });
+
+    const newTrack = newStream.getAudioTracks()[0];
+    newTrack.enabled = true;
+
+    setLocalAudioStream(newStream);
+  };
+
+  const onVideoInputChange = async (value: string) => {
+    setSelectedVideoInput(value);
+
+    if (!localVideoStream) return;
+    localVideoStream
+      .getVideoTracks()
+      .forEach((track) => (track.enabled = false));
+
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: value } },
+    });
+
+    const newTrack = newStream.getVideoTracks()[0];
+    newTrack.enabled = true;
+
+    setLocalVideoStream(newStream);
+  };
 
   return (
     <div className="lg:col-span-1">
@@ -82,7 +97,7 @@ export default function DeviceSettingPanel() {
               </Label>
               <Select
                 value={selectedVideoInput || ""}
-                onValueChange={setSelectedVideoInput}
+                onValueChange={(value) => onVideoInputChange(value)}
               >
                 <SelectTrigger className="bg-black/50 w-full border-gray-800 text-white">
                   <SelectValue />
@@ -120,7 +135,7 @@ export default function DeviceSettingPanel() {
               </Label>
               <Select
                 value={selectedAudioInput || ""}
-                onValueChange={setSelectedAudioInput}
+                onValueChange={(value) => onAudioInputChange(value)}
               >
                 <SelectTrigger className="bg-black/50 w-full border-gray-800 text-white">
                   <SelectValue />

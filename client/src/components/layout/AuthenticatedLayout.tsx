@@ -4,6 +4,7 @@ import Loading from "../loading";
 import RootLayout from "./RootLayout";
 import { socket } from "@/lib/socket";
 import { useEffect } from "react";
+import useListenDeviceChange from "@/hooks/useListenDeviceChange";
 
 export default function AuthenticatedLayout() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -14,6 +15,8 @@ export default function AuthenticatedLayout() {
       console.log(data);
     });
   }, [isLoaded]);
+
+  useListenDeviceChange();
 
   if (!isLoaded) {
     return <Loading />;
