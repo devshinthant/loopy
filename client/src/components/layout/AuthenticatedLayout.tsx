@@ -5,6 +5,7 @@ import RootLayout from "./RootLayout";
 import { socket } from "@/lib/socket";
 import { useEffect } from "react";
 import useListenDeviceChange from "@/hooks/useListenDeviceChange";
+import cleanUp from "@/lib/cleanUp";
 
 export default function AuthenticatedLayout() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -13,6 +14,9 @@ export default function AuthenticatedLayout() {
     if (!isLoaded) return;
     socket.on("connection-success", (data) => {
       console.log(data);
+    });
+    socket.on("disconnect", () => {
+      cleanUp();
     });
   }, [isLoaded]);
 
