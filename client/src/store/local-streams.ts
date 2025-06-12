@@ -31,11 +31,14 @@ const initialState: Omit<
 const useLocalStreamStore = create<LocalStreamState>()((set) => ({
   ...initialState,
   setLocalVideoStream: (localVideoStream) => set({ localVideoStream }),
-  resetLocalVideoStream: () => set(initialState),
+  resetLocalVideoStream: () =>
+    set((state) => ({ ...state, localVideoStream: null })),
   setLocalAudioStream: (localAudioStream) => set({ localAudioStream }),
-  resetLocalAudioStream: () => set(initialState),
+  resetLocalAudioStream: () =>
+    set((state) => ({ ...state, localAudioStream: null })),
   setLocalScreenStream: (localScreenStream) => set({ localScreenStream }),
-  resetLocalScreenStream: () => set(initialState),
+  resetLocalScreenStream: () =>
+    set((state) => ({ ...state, localScreenStream: null })),
 }));
 
 export default useLocalStreamStore;

@@ -35,11 +35,12 @@ const initialState: Omit<
 const useProducersStore = create<ProducerState>()((set) => ({
   ...initialState,
   setVideoProducer: (videoProducer) => set({ videoProducer }),
-  resetVideoProducer: () => set(initialState),
+  resetVideoProducer: () => set((state) => ({ ...state, videoProducer: null })),
   setAudioProducer: (audioProducer) => set({ audioProducer }),
-  resetAudioProducer: () => set(initialState),
+  resetAudioProducer: () => set((state) => ({ ...state, audioProducer: null })),
   setScreenProducer: (screenProducer) => set({ screenProducer }),
-  resetScreenProducer: () => set(initialState),
+  resetScreenProducer: () =>
+    set((state) => ({ ...state, screenProducer: null })),
 }));
 
 export default useProducersStore;

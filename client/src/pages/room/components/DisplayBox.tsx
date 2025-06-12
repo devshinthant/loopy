@@ -36,7 +36,7 @@ export default function DisplayBox({
           "col-span-2": col === 2,
           "col-span-3": col === 3,
           "col-span-4": col === 4,
-          "h-[200px]": localScreenStream || remoteScreenStream?.stream,
+          "h-[20dvh]": localScreenStream || remoteScreenStream?.stream,
         }
       )}
     >
