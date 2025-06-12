@@ -1,10 +1,19 @@
 import { Button } from "@/components/ui/button";
 import VideoOff from "@/components/VideoOff";
+import { cn } from "@/lib/utils";
+import useLocalStreamStore from "@/store/local-streams";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
+import useRemoteScreenStreamStore from "@/store/remote-screen-stream";
 import useRemoteStreamStore from "@/store/remote-streams";
 import { MicOff } from "lucide-react";
 
-export default function DisplayBox(data: UserData) {
+export default function DisplayBox({
+  data,
+  col,
+}: {
+  data: UserData;
+  col: number;
+}) {
   const { remoteStreams } = useRemoteStreamStore();
   const videoStream = remoteStreams?.find(
     (stream) => stream.emitterId === data.id
@@ -15,10 +24,22 @@ export default function DisplayBox(data: UserData) {
     (stream) => stream.emitterId === data.id
   );
 
-  console.log({ data });
+  const { localScreenStream } = useLocalStreamStore();
+  const { remoteScreenStream } = useRemoteScreenStreamStore();
 
   return (
-    <div className="w-full rounded-md bg-transparent overflow-hidden relative h-full">
+    <div
+      className={cn(
+        "w-full rounded-md bg-transparent overflow-hidden relative h-full",
+        {
+          "col-span-1": col === 1,
+          "col-span-2": col === 2,
+          "col-span-3": col === 3,
+          "col-span-4": col === 4,
+          "h-[200px]": localScreenStream || remoteScreenStream?.stream,
+        }
+      )}
+    >
       {videoStream && !videoStream?.paused && (
         <video
           ref={(el) => {

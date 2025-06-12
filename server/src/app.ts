@@ -201,7 +201,7 @@ peers.on("connection", async (socket) => {
 
   socket.on(
     "transport-produce",
-    async ({ kind, rtpParameters, roomId }, callback) => {
+    async ({ kind, rtpParameters, roomId, appData }, callback) => {
       console.log({ kind }, "SERVER KIND");
 
       try {
@@ -224,10 +224,14 @@ peers.on("connection", async (socket) => {
           });
         }
 
-        if (kind === "video") {
-          peer.addVideoProducer(producer);
+        if (kind === "video" && appData.screenShare) {
+          peer.addScreenShareProducer(producer);
         } else {
-          peer.addAudioProducer(producer);
+          if (kind === "video") {
+            peer.addVideoProducer(producer);
+          } else {
+            peer.addAudioProducer(producer);
+          }
         }
 
         producer.on("transportclose", () => {
@@ -240,6 +244,7 @@ peers.on("connection", async (socket) => {
         socket.broadcast.emit("producer-update", {
           producerId: producer.id,
           kind: producer.kind,
+          screenShare: appData.screenShare,
           type: "add",
           producerData: peer.data,
         });
@@ -480,6 +485,32 @@ peers.on("connection", async (socket) => {
       producerId,
       peerId: socket.id,
       kind,
+    });
+  });
+
+  socket.on("end-screen-share", ({ roomId }, callback) => {
+    console.log("END SCREEN SHARE");
+
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const peer = room.getPeer(socket);
+    if (!peer) return;
+
+    peer.screenShareProducer?.close();
+    peer.screenShareProducer = undefined;
+
+    socket.broadcast.emit("producer-update", {
+      peerId: socket.id,
+      producerId: "",
+      kind: "video",
+      type: "remove",
+      producerData: {},
+      screenShare: true,
+    });
+
+    callback({
+      message: "Screen share ended",
     });
   });
 });

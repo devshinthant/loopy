@@ -10,6 +10,8 @@ import { MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useParticipantsStore } from "@/store/participants";
 import { useRef } from "react";
+import useRemoteScreenStreamStore from "@/store/remote-screen-stream";
+import { cn } from "@/lib/utils";
 
 export default function VideoDisplay() {
   const constraintsRef = useRef<HTMLDivElement>(null);
@@ -20,15 +22,60 @@ export default function VideoDisplay() {
 
   const { user } = useUser();
 
+  const { localScreenStream } = useLocalStreamStore();
+  const { remoteScreenStream } = useRemoteScreenStreamStore();
+
   return (
     <motion.div
       ref={constraintsRef}
       className="bg-gradient-to-br from-black via-gray-900 to-black overflow-hidden flex-1 h-full w-full"
     >
-      <div className="w-full h-full gap-5 px-[5%] py-10 flex items-center">
-        {participants.map((stream) => {
-          return <DisplayBox key={stream.id} {...stream} />;
-        })}
+      <div
+        className={cn("w-full h-full gap-5 px-[5%] py-10 flex items-center")}
+      >
+        {localScreenStream && (
+          <div className="w-full h-full">
+            <video
+              ref={(el) => {
+                if (el) el.srcObject = localScreenStream;
+              }}
+              className="w-full h-full  object-cover"
+              autoPlay
+              playsInline
+              muted
+            />
+          </div>
+        )}
+
+        {remoteScreenStream && (
+          <div className="w-full h-full">
+            <video
+              ref={(el) => {
+                if (el) el.srcObject = remoteScreenStream.stream;
+              }}
+              className="w-full h-full  object-cover"
+              autoPlay
+              playsInline
+              muted
+            />
+          </div>
+        )}
+        <div
+          className={cn("w-full h-full flex flex-row", {
+            "w-[30%] grid grid-cols-4 gap-5":
+              localScreenStream || remoteScreenStream?.stream,
+          })}
+        >
+          {participants.map((stream, index, data) => {
+            return (
+              <DisplayBox
+                col={index + 1 < data.length ? 2 : 4}
+                key={stream.id}
+                data={stream}
+              />
+            );
+          })}
+        </div>
       </div>
       <motion.div
         drag

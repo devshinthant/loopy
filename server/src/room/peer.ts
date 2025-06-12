@@ -16,6 +16,7 @@ class Peer {
   producerTransport: Transport | undefined;
   audioProducer: Producer | undefined;
   videoProducer: Producer | undefined;
+  screenShareProducer: Producer | undefined;
 
   consumerTransport: Transport | undefined;
   consumers: Map<string, Consumer> | undefined;
@@ -32,6 +33,7 @@ class Peer {
     this.producerTransport = undefined;
     this.audioProducer = undefined;
     this.videoProducer = undefined;
+    this.screenShareProducer = undefined;
     this.consumerTransport = undefined;
     this.consumers = new Map();
   }
@@ -46,6 +48,10 @@ class Peer {
 
   addVideoProducer(producer: Producer) {
     this.videoProducer = producer;
+  }
+
+  addScreenShareProducer(producer: Producer) {
+    this.screenShareProducer = producer;
   }
 
   addConsumerTransport(transport: Transport) {

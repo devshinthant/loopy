@@ -1,6 +1,7 @@
 import handleConsume from "@/lib/handleConsume";
 import { socket } from "@/lib/socket";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
+import useRemoteScreenStreamStore from "@/store/remote-screen-stream";
 import useRemoteStreamStore from "@/store/remote-streams";
 import useRoomStore from "@/store/room";
 import useTransportsStore from "@/store/transports";
@@ -18,6 +19,8 @@ export default function useListenProducerUpdate({
   const { addRemoteStream, removeRemoteStream } = useRemoteStreamStore();
   const { addRemoteAudioStream, removeRemoteAudioStream } =
     useRemoteAudioStreamStore();
+  const { addRemoteScreenStream, resetRemoteScreenStream } =
+    useRemoteScreenStreamStore();
 
   useEffect(() => {
     const onNewProducer = ({
@@ -25,11 +28,13 @@ export default function useListenProducerUpdate({
       kind,
       type,
       producerData,
+      screenShare,
     }: {
       producerId: string;
       kind: "audio" | "video" | "both";
       type: "add" | "remove";
       producerData: UserData;
+      screenShare: boolean;
     }) => {
       if (type === "add") {
         handleConsume({
@@ -38,29 +43,41 @@ export default function useListenProducerUpdate({
           kind,
           callback: (track) => {
             const stream = new MediaStream([track]);
-            if (kind === "video") {
-              addRemoteStream({
+
+            if (kind === "video" && screenShare) {
+              addRemoteScreenStream({
                 stream,
-                paused: false,
-                producerId,
                 emitterId: producerData.id,
               });
             } else {
-              console.log("remote audio producer", producerId);
-              addRemoteAudioStream({
-                stream,
-                paused: false,
-                producerId,
-                emitterId: producerData.id,
-              });
+              if (kind === "video") {
+                addRemoteStream({
+                  stream,
+                  paused: false,
+                  producerId,
+                  emitterId: producerData.id,
+                });
+              } else {
+                console.log("remote audio producer", producerId);
+                addRemoteAudioStream({
+                  stream,
+                  paused: false,
+                  producerId,
+                  emitterId: producerData.id,
+                });
+              }
             }
           },
         });
       } else {
-        if (kind === "video") {
-          removeRemoteStream(producerId);
-        } else if (kind === "audio") {
-          removeRemoteAudioStream(producerId);
+        if (screenShare) {
+          resetRemoteScreenStream();
+        } else {
+          if (kind === "video") {
+            removeRemoteStream(producerId);
+          } else if (kind === "audio") {
+            removeRemoteAudioStream(producerId);
+          }
         }
       }
     };
@@ -78,5 +95,7 @@ export default function useListenProducerUpdate({
     addRemoteAudioStream,
     removeRemoteStream,
     removeRemoteAudioStream,
+    addRemoteScreenStream,
+    resetRemoteScreenStream,
   ]);
 }

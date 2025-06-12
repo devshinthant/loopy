@@ -51,12 +51,12 @@ const createProduceTransport = ({
       );
 
       transport.on("produce", (params, callback, errorBack) => {
-        const { kind, rtpParameters } = params;
+        const { kind, rtpParameters, appData } = params;
 
         try {
           socket.emit(
             "transport-produce",
-            { kind, rtpParameters, roomId },
+            { kind, rtpParameters, roomId, appData },
             ({ id }: { id: string }) => {
               console.log("Server producer created", { id });
               callback({ id });

@@ -11,6 +11,11 @@ interface ProducerState {
   audioProducer: Producer | null;
   setAudioProducer: (audioProducer: Producer) => void;
   resetAudioProducer: () => void;
+
+  /* Screen Producer */
+  screenProducer: Producer | null;
+  setScreenProducer: (screenProducer: Producer) => void;
+  resetScreenProducer: () => void;
 }
 
 const initialState: Omit<
@@ -19,9 +24,12 @@ const initialState: Omit<
   | "resetVideoProducer"
   | "setAudioProducer"
   | "resetAudioProducer"
+  | "setScreenProducer"
+  | "resetScreenProducer"
 > = {
   videoProducer: null,
   audioProducer: null,
+  screenProducer: null,
 };
 
 const useProducersStore = create<ProducerState>()((set) => ({
@@ -30,6 +38,8 @@ const useProducersStore = create<ProducerState>()((set) => ({
   resetVideoProducer: () => set(initialState),
   setAudioProducer: (audioProducer) => set({ audioProducer }),
   resetAudioProducer: () => set(initialState),
+  setScreenProducer: (screenProducer) => set({ screenProducer }),
+  resetScreenProducer: () => set(initialState),
 }));
 
 export default useProducersStore;
