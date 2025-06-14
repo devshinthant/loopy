@@ -403,6 +403,7 @@ peers.on("connection", async (socket) => {
               {
                 kind: "audio",
                 userData: peer.data,
+                screenShare: false,
                 paused: peer.audioProducer?.paused,
                 producerId: peer.audioProducer?.id,
               },
@@ -413,8 +414,20 @@ peers.on("connection", async (socket) => {
               {
                 kind: "video",
                 userData: peer.data,
+                screenShare: false,
                 paused: peer.videoProducer?.paused,
                 producerId: peer.videoProducer?.id,
+              },
+            ]
+          : []),
+        ...(peer.screenShareProducer
+          ? [
+              {
+                kind: "video",
+                screenShare: true,
+                userData: peer.data,
+                paused: false,
+                producerId: peer.screenShareProducer?.id,
               },
             ]
           : []),

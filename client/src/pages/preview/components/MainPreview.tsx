@@ -9,6 +9,7 @@ import useLocalStreamStore from "@/store/local-streams";
 import { useParticipantsStore } from "@/store/participants";
 import useProducersStore from "@/store/producers";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
+import useRemoteScreenStreamStore from "@/store/remote-screen-stream";
 import useRemoteStreamStore from "@/store/remote-streams";
 import useRoomStore from "@/store/room";
 import useSelectedDevicesStore from "@/store/selectedDevices";
@@ -56,7 +57,7 @@ export default function MainPreview() {
   } = useLocalStreamStore();
 
   const { addRemoteStream } = useRemoteStreamStore();
-
+  const { addRemoteScreenStream } = useRemoteScreenStreamStore();
   const { addRemoteAudioStream } = useRemoteAudioStreamStore();
 
   const { selectedAudioInput, selectedVideoInput } = useSelectedDevicesStore();
@@ -177,34 +178,44 @@ export default function MainPreview() {
         producerId: string;
         userData: UserData;
         paused: boolean;
+        screenShare: boolean;
       }[];
     }) => {
       console.log({ producers }, "initial producers");
-      producers.forEach(({ kind, producerId, userData, paused }) => {
-        handleConsume({
-          roomId,
-          producerId,
-          kind,
-          callback: (track) => {
-            const stream = new MediaStream([track]);
-            if (kind === "video") {
-              addRemoteStream({
-                stream,
-                paused,
-                producerId,
-                emitterId: userData.id,
-              });
-            } else {
-              addRemoteAudioStream({
-                stream,
-                paused,
-                producerId,
-                emitterId: userData.id,
-              });
-            }
-          },
-        });
-      });
+      producers.forEach(
+        ({ kind, producerId, userData, paused, screenShare }) => {
+          handleConsume({
+            roomId,
+            producerId,
+            kind,
+            callback: (track) => {
+              const stream = new MediaStream([track]);
+              if (screenShare) {
+                addRemoteScreenStream({
+                  stream,
+                  emitterId: userData.id,
+                });
+              } else {
+                if (kind === "video") {
+                  addRemoteStream({
+                    stream,
+                    paused,
+                    producerId,
+                    emitterId: userData.id,
+                  });
+                } else {
+                  addRemoteAudioStream({
+                    stream,
+                    paused,
+                    producerId,
+                    emitterId: userData.id,
+                  });
+                }
+              }
+            },
+          });
+        }
+      );
     };
     socket.on("getOtherProducers", handleGetOtherProducers);
 
