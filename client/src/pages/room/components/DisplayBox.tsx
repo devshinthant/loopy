@@ -30,13 +30,13 @@ export default function DisplayBox({
   return (
     <div
       className={cn(
-        "w-full rounded-md bg-transparent overflow-hidden relative h-full",
+        "w-full rounded-md bg-black overflow-hidden relative h-full",
         {
           "col-span-1": col === 1,
           "col-span-2": col === 2,
           "col-span-3": col === 3,
           "col-span-4": col === 4,
-          "h-[20dvh]": localScreenStream || remoteScreenStream?.stream,
+          "h-[20dvh] ": localScreenStream || remoteScreenStream?.stream,
         }
       )}
     >
@@ -47,11 +47,11 @@ export default function DisplayBox({
           }}
           autoPlay
           playsInline
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           muted={false}
           style={{
             filter: videoStream?.paused
-              ? "grayscale(100%) brightness( 0.5)"
+              ? "grayscale(100%) brightness(0.5)"
               : "none",
           }}
         />
