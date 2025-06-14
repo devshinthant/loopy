@@ -4,9 +4,9 @@ import { useUser } from "@clerk/clerk-react";
 import useRemoteScreenStreamStore from "@/store/remote-screen-stream";
 import { useParticipantsStore } from "@/store/participants";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 
-export default function SharingParticipantBar() {
+const SharingParticipantBar = () => {
   const { localScreenStream } = useLocalStreamStore();
   const { user } = useUser();
   const { remoteScreenStream } = useRemoteScreenStreamStore();
@@ -119,4 +119,6 @@ export default function SharingParticipantBar() {
       </div>
     </div>
   );
-}
+};
+
+export default memo(SharingParticipantBar);

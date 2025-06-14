@@ -1,6 +1,7 @@
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
+import { memo } from "react";
 
-export default function AudioStreams() {
+function AudioStreams() {
   const { remoteAudioStreams } = useRemoteAudioStreamStore();
   console.log({ remoteAudioStreams });
 
@@ -22,3 +23,5 @@ export default function AudioStreams() {
     </>
   );
 }
+
+export default memo(AudioStreams);
