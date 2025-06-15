@@ -38,6 +38,17 @@ peers.on("connection", async (socket) => {
   });
 
   socket.on("disconnect", () => {
+    rooms.forEach((room) => {
+      const peer = room.getPeer(socket);
+      if (!peer) return;
+      socket.broadcast.emit("participant-update", {
+        participant: {
+          id: peer.data.id,
+        },
+        type: "remove",
+      });
+    });
+
     cleanUp({ socket });
 
     console.log("Client disconnected", socket.id);

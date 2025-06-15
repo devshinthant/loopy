@@ -78,6 +78,7 @@ function clean(room: Room, peer: Peer, socket: Socket) {
   /* Close Producers */
   peer.audioProducer?.close();
   peer.videoProducer?.close();
+  peer.screenShareProducer?.close();
   console.log("Producers closed");
 
   /* Close Consumers */
