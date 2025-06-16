@@ -9,7 +9,6 @@ import VideoOff from "@/components/VideoOff";
 
 const MeView = forwardRef<HTMLDivElement>((_, ref) => {
   const { localVideoStream } = useLocalStreamStore();
-  const { cameraOpened, micOpened } = useUserOptionsStore();
   const { user } = useUser();
   return (
     <motion.div
@@ -20,7 +19,7 @@ const MeView = forwardRef<HTMLDivElement>((_, ref) => {
       dragElastic={0.1}
       className="absolute cursor-grab border border-gray-800 rounded-md overflow-hidden bottom-20 right-10 w-[300px] h-[180px]"
     >
-      {cameraOpened ? (
+      <VideoWrapper imageUrl={user?.imageUrl || ""}>
         <video
           ref={(el) => {
             if (el) el.srcObject = localVideoStream;
@@ -30,12 +29,34 @@ const MeView = forwardRef<HTMLDivElement>((_, ref) => {
           autoPlay
           playsInline
         />
-      ) : (
-        <div className="w-full h-full">
-          <VideoOff imageUrl={user?.imageUrl || ""} />
-        </div>
-      )}
+      </VideoWrapper>
 
+      <MicIndicator />
+    </motion.div>
+  );
+});
+
+MeView.displayName = "MeView";
+
+export default MeView;
+
+const VideoWrapper = ({
+  children,
+  imageUrl,
+}: {
+  children: React.ReactNode;
+  imageUrl: string;
+}) => {
+  const { cameraOpened } = useUserOptionsStore();
+  return (
+    <>{cameraOpened ? children : <VideoOff imageUrl={imageUrl || ""} />}</>
+  );
+};
+
+const MicIndicator = () => {
+  const { micOpened } = useUserOptionsStore();
+  return (
+    <>
       {!micOpened && (
         <div className="absolute top-2 right-2">
           <Button
@@ -46,10 +67,6 @@ const MeView = forwardRef<HTMLDivElement>((_, ref) => {
           </Button>
         </div>
       )}
-    </motion.div>
+    </>
   );
-});
-
-MeView.displayName = "MeView";
-
-export default MeView;
+};

@@ -1,11 +1,9 @@
 import { Button } from "@/components/ui/button";
 import VideoOff from "@/components/VideoOff";
-import { cn } from "@/lib/utils";
-import useLocalStreamStore from "@/store/local-streams";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
-import useRemoteScreenStreamStore from "@/store/remote-screen-stream";
 import useRemoteStreamStore from "@/store/remote-streams";
 import { MicOff } from "lucide-react";
+import DisplayBoxWrapper from "./DisplayBoxWrapper";
 
 export default function DisplayBox({
   data,
@@ -19,27 +17,8 @@ export default function DisplayBox({
     (stream) => stream.emitterId === data.id
   );
 
-  const { remoteAudioStreams } = useRemoteAudioStreamStore();
-  const audioStream = remoteAudioStreams?.find(
-    (stream) => stream.emitterId === data.id
-  );
-
-  const { localScreenStream } = useLocalStreamStore();
-  const { remoteScreenStream } = useRemoteScreenStreamStore();
-
   return (
-    <div
-      className={cn(
-        "w-full rounded-md bg-black overflow-hidden relative h-full",
-        {
-          "col-span-1": col === 1,
-          "col-span-2": col === 2,
-          "col-span-3": col === 3,
-          "col-span-4": col === 4,
-          "h-[20dvh] ": localScreenStream || remoteScreenStream?.stream,
-        }
-      )}
-    >
+    <DisplayBoxWrapper data={data} col={col}>
       {videoStream && !videoStream?.paused && (
         <video
           ref={(el) => {
@@ -61,6 +40,22 @@ export default function DisplayBox({
         <VideoOff local={false} imageUrl={data.imageUrl || ""} />
       )}
 
+      <MicIndicator userId={data.id} />
+
+      <p className="absolute text-white bottom-2 left-2 text-xs font-semibold">
+        {data.name || "Guest"}
+      </p>
+    </DisplayBoxWrapper>
+  );
+}
+
+const MicIndicator = ({ userId }: { userId: string }) => {
+  const { remoteAudioStreams } = useRemoteAudioStreamStore();
+  const audioStream = remoteAudioStreams?.find(
+    (stream) => stream.emitterId === userId
+  );
+  return (
+    <>
       {(!audioStream || audioStream?.paused) && (
         <div className="absolute top-2 right-2">
           <Button
@@ -71,10 +66,6 @@ export default function DisplayBox({
           </Button>
         </div>
       )}
-
-      <p className="absolute text-white bottom-2 left-2 text-xs font-semibold">
-        {data.name || "Guest"}
-      </p>
-    </div>
+    </>
   );
-}
+};
