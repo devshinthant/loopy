@@ -6,6 +6,7 @@ import { useUser } from "@clerk/clerk-react";
 import useLocalStreamStore from "@/store/local-streams";
 import useUserOptionsStore from "@/store/userOptions";
 import VideoOff from "@/components/VideoOff";
+import SpeakingIndicator from "./SpeakingIndicator";
 
 const MeView = forwardRef<HTMLDivElement>((_, ref) => {
   const { localVideoStream } = useLocalStreamStore();
@@ -55,6 +56,8 @@ const VideoWrapper = ({
 
 const MicIndicator = () => {
   const { micOpened } = useUserOptionsStore();
+  const { localAudioStream } = useLocalStreamStore();
+
   return (
     <>
       {!micOpened && (
@@ -66,6 +69,10 @@ const MicIndicator = () => {
             <MicOff className="w-4 h-4" />
           </Button>
         </div>
+      )}
+
+      {localAudioStream && micOpened && (
+        <SpeakingIndicator stream={localAudioStream} />
       )}
     </>
   );
