@@ -26,7 +26,7 @@ export default function DisplayBox({
           }}
           autoPlay
           playsInline
-          className="w-full h-full object-contain"
+          className="w-full h-full object-cover"
           muted={false}
           style={{
             filter: videoStream?.paused

@@ -2,12 +2,16 @@ import useLocalStreamStore from "@/store/local-streams";
 import { motion } from "motion/react";
 import DisplayBox from "./DisplayBox";
 import { useParticipantsStore } from "@/store/participants";
-import { memo, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import useRemoteScreenStreamStore from "@/store/remote-screen-stream";
 import { cn } from "@/lib/utils";
 import ShareScreens from "./ShareScreens";
 import SharingParticipantBar from "./SharingParticipantBar";
 import MeView from "./MeView";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+
+gsap.registerPlugin(useGSAP);
 
 function VideoDisplay() {
   const constraintsRef = useRef<HTMLDivElement>(null);
@@ -20,6 +24,25 @@ function VideoDisplay() {
   const isScreenSharing = localScreenStream || remoteScreenStream?.stream;
 
   const participantJoined = participants.length > 0;
+
+  useEffect(() => {
+    if (isScreenSharing) return;
+    if (participantJoined) {
+      gsap.to("#me-view", {
+        width: "300px",
+        height: "180px",
+        bottom: "10px",
+        right: "10px",
+      });
+    } else {
+      gsap.to("#me-view", {
+        width: "100%",
+        height: "100%",
+        bottom: "0px",
+        right: "0px",
+      });
+    }
+  }, [participantJoined, isScreenSharing]);
 
   return (
     <motion.div className="bg-gradient-to-br relative from-black via-gray-900 py-5 px-[5%]  to-black overflow-hidden flex-1 h-full w-full">
@@ -34,7 +57,7 @@ function VideoDisplay() {
         <motion.div
           ref={constraintsRef}
           className={cn("h-full flex relative gap-5 flex-row", {
-            "w-[20%]": isScreenSharing,
+            "w-[20%] flex-col": isScreenSharing,
             "w-full": !isScreenSharing,
           })}
         >
@@ -42,24 +65,24 @@ function VideoDisplay() {
             return <DisplayBox col={4} key={stream.id} data={stream} />;
           })}
 
-          <motion.div
-            animate={{
-              width: participantJoined ? "300px" : "100%",
-              height: participantJoined ? "180px" : "100%",
-              bottom: participantJoined ? "10px" : "0px",
-              right: participantJoined ? "10px" : "0px",
-            }}
-            transition={{
-              duration: 0.5,
-              ease: "easeInOut",
-            }}
-            className={cn("w-full absolute h-full")}
-          >
-            <MeView
-              ref={constraintsRef}
-              participantJoined={participantJoined}
-            />
-          </motion.div>
+          {isScreenSharing && (
+            <div className="w-full h-full relative max-h-[20dvh]">
+              <MeView
+                isScreenSharing={!!isScreenSharing}
+                participantJoined={participantJoined}
+              />
+            </div>
+          )}
+
+          {!isScreenSharing && (
+            <motion.div id="me-view" className={"absolute w-full h-full"}>
+              <MeView
+                isScreenSharing={!!isScreenSharing}
+                ref={constraintsRef}
+                participantJoined={participantJoined}
+              />
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </motion.div>

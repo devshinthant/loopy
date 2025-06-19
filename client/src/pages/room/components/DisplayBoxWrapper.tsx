@@ -24,13 +24,13 @@ export default function DisplayBoxWrapper({
   return (
     <div
       className={cn(
-        "w-full rounded-md bg-black overflow-hidden relative h-full transition-all duration-300",
+        "w-full rounded-md  bg-black overflow-hidden relative h-full",
         {
           "col-span-1": col === 1,
           "col-span-2": col === 2,
           "col-span-3": col === 3,
           "col-span-4": col === 4,
-          "h-[20dvh]": localScreenStream || remoteScreenStream?.stream,
+          "max-h-[20dvh]": localScreenStream || remoteScreenStream?.stream,
         }
       )}
     >

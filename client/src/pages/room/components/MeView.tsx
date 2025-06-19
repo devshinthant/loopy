@@ -9,47 +9,51 @@ import VideoOff from "@/components/VideoOff";
 import SpeakingIndicator from "./SpeakingIndicator";
 import { cn } from "@/lib/utils";
 
-const MeView = forwardRef<HTMLDivElement, { participantJoined: boolean }>(
-  ({ participantJoined }, parentRef) => {
-    const { user } = useUser();
-    const [dragKey, setDragKey] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
-    const prevParentRef = useRef(parentRef);
+const MeView = forwardRef<
+  HTMLDivElement,
+  { participantJoined: boolean; isScreenSharing: boolean }
+>(({ participantJoined, isScreenSharing }, parentRef) => {
+  const { user } = useUser();
+  const [dragKey, setDragKey] = useState(0);
+  const [, setIsDragging] = useState(false);
+  const prevParentRef = useRef(parentRef);
 
-    // Update drag constraints when parentRef changes
-    useEffect(() => {
-      if (prevParentRef.current !== parentRef && participantJoined) {
-        setDragKey((prev) => prev + 1);
-        prevParentRef.current = parentRef;
-      }
-    }, [parentRef, participantJoined]);
+  // Update drag constraints when parentRef changes
+  useEffect(() => {
+    if (prevParentRef.current !== parentRef && participantJoined) {
+      setDragKey((prev) => prev + 1);
+      prevParentRef.current = parentRef;
+    }
+  }, [parentRef, participantJoined]);
 
-    return (
-      <motion.div
-        key={dragKey}
-        drag={participantJoined}
-        dragConstraints={parentRef as RefObject<Element | null>}
-        dragMomentum={false}
-        dragElastic={0.1}
-        onDragStart={() => setIsDragging(true)}
-        onDragEnd={() => setIsDragging(false)}
-        className={cn(
-          "border-gray-800 w-full h-full rounded-md overflow-hidden",
-          {
-            "transform-none!": !participantJoined,
-            "cursor-grab": participantJoined,
-            "transition-[width,height,bottom,right] duration-500": !isDragging,
-          }
-        )}
-      >
-        <VideoWrapper imageUrl={user?.imageUrl || ""}>
-          <Me />
-        </VideoWrapper>
-        <MicIndicator />
-      </motion.div>
-    );
-  }
-);
+  return (
+    <motion.div
+      key={dragKey}
+      drag={participantJoined && !isScreenSharing}
+      dragConstraints={parentRef as RefObject<Element | null>}
+      dragMomentum={false}
+      dragElastic={0.1}
+      onDragStart={() => setIsDragging(true)}
+      onDragEnd={() => setIsDragging(false)}
+      className={cn(
+        "border-gray-800 w-full h-full rounded-md overflow-hidden",
+        {
+          "transform-none!": !participantJoined,
+          "cursor-grab": participantJoined,
+          "col-span-4": isScreenSharing,
+        }
+      )}
+    >
+      <VideoWrapper imageUrl={user?.imageUrl || ""}>
+        <Me />
+      </VideoWrapper>
+      <p className="absolute text-white bottom-2 left-2 text-xs font-semibold">
+        You
+      </p>
+      <MicIndicator />
+    </motion.div>
+  );
+});
 
 MeView.displayName = "MeView";
 
