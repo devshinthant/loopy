@@ -42,6 +42,15 @@ const cleanUp = ({ socket, roomId, endRoom = false }: CleanUpProps) => {
             type: "remove",
           });
         }
+
+        if (peer.screenShareProducer) {
+          socket.broadcast.emit("producer-update", {
+            producerId: peer.screenShareProducer.id,
+            kind: "video",
+            screenShare: true,
+            type: "remove",
+          });
+        }
       }
       endRoom && end(socket, room);
     } else {
@@ -62,6 +71,15 @@ const cleanUp = ({ socket, roomId, endRoom = false }: CleanUpProps) => {
             socket.broadcast.emit("producer-update", {
               producerId: peer.audioProducer.id,
               kind: "audio",
+              type: "remove",
+            });
+          }
+
+          if (peer.screenShareProducer) {
+            socket.broadcast.emit("producer-update", {
+              producerId: peer.screenShareProducer.id,
+              kind: "video",
+              screenShare: true,
               type: "remove",
             });
           }

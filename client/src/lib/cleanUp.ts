@@ -4,6 +4,7 @@ import useLocalStreamStore from "@/store/local-streams";
 import { useParticipantsStore } from "@/store/participants";
 import useProducersStore from "@/store/producers";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
+import useRemoteScreenStreamStore from "@/store/remote-screen-stream";
 import useRemoteStreamStore from "@/store/remote-streams";
 import useSelectedDevicesStore from "@/store/selectedDevices";
 import useTransportsStore from "@/store/transports";
@@ -53,9 +54,14 @@ const cleanUp = () => {
     localVideoStream,
     resetLocalAudioStream,
     resetLocalVideoStream,
+    localScreenStream,
+    resetLocalScreenStream,
   } = useLocalStreamStore.getState();
   localVideoStream?.getTracks().forEach((track) => track.stop());
   resetLocalVideoStream();
+
+  localScreenStream?.getTracks().forEach((track) => track.stop());
+  resetLocalScreenStream();
 
   localAudioStream?.getTracks().forEach((track) => track.stop());
   resetLocalAudioStream();
@@ -76,6 +82,13 @@ const cleanUp = () => {
   );
   resetRemoteAudioStreams();
   console.log("Remote Streams Reset");
+
+  /* Close Remote Screen Stream */
+  const { remoteScreenStream, resetRemoteScreenStream } =
+    useRemoteScreenStreamStore.getState();
+  remoteScreenStream?.stream?.getTracks().forEach((track) => track.stop());
+  resetRemoteScreenStream();
+  console.log("Remote Screen Stream Reset");
 
   /* Close Video Producer */
   const { videoProducer, resetVideoProducer } = useProducersStore.getState();
