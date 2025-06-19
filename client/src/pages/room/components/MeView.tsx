@@ -1,4 +1,4 @@
-import { forwardRef, type RefObject } from "react";
+import { forwardRef, useEffect, useRef, type RefObject } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { MicOff } from "lucide-react";
@@ -9,8 +9,8 @@ import VideoOff from "@/components/VideoOff";
 import SpeakingIndicator from "./SpeakingIndicator";
 
 const MeView = forwardRef<HTMLDivElement>((_, ref) => {
-  const { localVideoStream } = useLocalStreamStore();
   const { user } = useUser();
+
   return (
     <motion.div
       ref={ref}
@@ -21,17 +21,8 @@ const MeView = forwardRef<HTMLDivElement>((_, ref) => {
       className="absolute cursor-grab border border-gray-800 rounded-md overflow-hidden bottom-20 right-10 w-[300px] h-[180px]"
     >
       <VideoWrapper imageUrl={user?.imageUrl || ""}>
-        <video
-          ref={(el) => {
-            if (el) el.srcObject = localVideoStream;
-          }}
-          id="localvideo"
-          className="w-full object-cover h-full"
-          autoPlay
-          playsInline
-        />
+        <Me />
       </VideoWrapper>
-
       <MicIndicator />
     </motion.div>
   );
@@ -51,6 +42,52 @@ const VideoWrapper = ({
   const { cameraOpened } = useUserOptionsStore();
   return (
     <>{cameraOpened ? children : <VideoOff imageUrl={imageUrl || ""} />}</>
+  );
+};
+
+const Me = () => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { localVideoStream } = useLocalStreamStore();
+
+  const openWindow = async () => {
+    try {
+      if (!videoRef.current) return;
+
+      await videoRef.current.requestPictureInPicture();
+    } catch (error) {
+      if (error) {
+        console.log(error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        openWindow();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.srcObject = localVideoStream;
+    }
+  }, [localVideoStream]);
+
+  return (
+    <video
+      ref={videoRef}
+      id="localvideo"
+      className="w-full object-cover h-full"
+      autoPlay
+      playsInline
+    />
   );
 };
 
