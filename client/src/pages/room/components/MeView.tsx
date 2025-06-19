@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, type RefObject } from "react";
+import { forwardRef, useEffect, useRef, useState, type RefObject } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { MicOff } from "lucide-react";
@@ -7,26 +7,49 @@ import useLocalStreamStore from "@/store/local-streams";
 import useUserOptionsStore from "@/store/userOptions";
 import VideoOff from "@/components/VideoOff";
 import SpeakingIndicator from "./SpeakingIndicator";
+import { cn } from "@/lib/utils";
 
-const MeView = forwardRef<HTMLDivElement>((_, ref) => {
-  const { user } = useUser();
+const MeView = forwardRef<HTMLDivElement, { participantJoined: boolean }>(
+  ({ participantJoined }, parentRef) => {
+    const { user } = useUser();
+    const [dragKey, setDragKey] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const prevParentRef = useRef(parentRef);
 
-  return (
-    <motion.div
-      ref={ref}
-      drag
-      dragConstraints={ref as RefObject<Element | null>}
-      dragMomentum={false}
-      dragElastic={0.1}
-      className="absolute cursor-grab border border-gray-800 rounded-md overflow-hidden bottom-20 right-10 w-[300px] h-[180px]"
-    >
-      <VideoWrapper imageUrl={user?.imageUrl || ""}>
-        <Me />
-      </VideoWrapper>
-      <MicIndicator />
-    </motion.div>
-  );
-});
+    // Update drag constraints when parentRef changes
+    useEffect(() => {
+      if (prevParentRef.current !== parentRef && participantJoined) {
+        setDragKey((prev) => prev + 1);
+        prevParentRef.current = parentRef;
+      }
+    }, [parentRef, participantJoined]);
+
+    return (
+      <motion.div
+        key={dragKey}
+        drag={participantJoined}
+        dragConstraints={parentRef as RefObject<Element | null>}
+        dragMomentum={false}
+        dragElastic={0.1}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={() => setIsDragging(false)}
+        className={cn(
+          "border-gray-800 w-full h-full rounded-md overflow-hidden",
+          {
+            "transform-none!": !participantJoined,
+            "cursor-grab": participantJoined,
+            "transition-[width,height,bottom,right] duration-500": !isDragging,
+          }
+        )}
+      >
+        <VideoWrapper imageUrl={user?.imageUrl || ""}>
+          <Me />
+        </VideoWrapper>
+        <MicIndicator />
+      </motion.div>
+    );
+  }
+);
 
 MeView.displayName = "MeView";
 

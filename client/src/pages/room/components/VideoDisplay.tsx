@@ -19,13 +19,10 @@ function VideoDisplay() {
 
   const isScreenSharing = localScreenStream || remoteScreenStream?.stream;
 
-  console.log("render");
+  const participantJoined = participants.length > 0;
 
   return (
-    <motion.div
-      ref={constraintsRef}
-      className="bg-gradient-to-br from-black via-gray-900 py-5 px-[5%] to-black overflow-hidden flex-1 h-full w-full"
-    >
+    <motion.div className="bg-gradient-to-br relative from-black via-gray-900 py-5 px-[5%]  to-black overflow-hidden flex-1 h-full w-full">
       <SharingParticipantBar />
       <div className="w-full flex-1 h-full gap-5 flex items-start">
         {isScreenSharing && (
@@ -33,8 +30,10 @@ function VideoDisplay() {
             <ShareScreens />
           </div>
         )}
-        <div
-          className={cn("h-full flex gap-5 flex-row", {
+
+        <motion.div
+          ref={constraintsRef}
+          className={cn("h-full flex relative gap-5 flex-row", {
             "w-[20%]": isScreenSharing,
             "w-full": !isScreenSharing,
           })}
@@ -42,9 +41,27 @@ function VideoDisplay() {
           {participants.map((stream) => {
             return <DisplayBox col={4} key={stream.id} data={stream} />;
           })}
-        </div>
+
+          <motion.div
+            animate={{
+              width: participantJoined ? "300px" : "100%",
+              height: participantJoined ? "180px" : "100%",
+              bottom: participantJoined ? "10px" : "0px",
+              right: participantJoined ? "10px" : "0px",
+            }}
+            transition={{
+              duration: 0.5,
+              ease: "easeInOut",
+            }}
+            className={cn("w-full absolute h-full")}
+          >
+            <MeView
+              ref={constraintsRef}
+              participantJoined={participantJoined}
+            />
+          </motion.div>
+        </motion.div>
       </div>
-      <MeView ref={constraintsRef} />
     </motion.div>
   );
 }
