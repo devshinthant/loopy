@@ -229,6 +229,7 @@ export default function MainPreview() {
     roomId,
     addRemoteStream,
     addRemoteAudioStream,
+    addRemoteScreenStream,
   ]);
 
   /* Listen for producer updates */
@@ -260,7 +261,7 @@ export default function MainPreview() {
                 }}
                 autoPlay
                 playsInline
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
               />
             </div>
 

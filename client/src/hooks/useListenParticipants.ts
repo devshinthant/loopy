@@ -1,3 +1,4 @@
+import { playNotification } from "@/lib/playNotification";
 import { socket } from "@/lib/socket";
 import { useParticipantsStore } from "@/store/participants";
 import { useEffect } from "react";
@@ -13,10 +14,11 @@ export default function useListenParticipants() {
       type: "add" | "remove";
       participant: UserData;
     }) => {
-      console.log({ participant, type });
       if (type === "add") {
+        playNotification("join");
         addParticipant(participant);
       } else {
+        playNotification("leave");
         removeParticipant(participant.id);
       }
     };
