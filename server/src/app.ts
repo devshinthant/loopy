@@ -6,6 +6,7 @@ import mediaCodecs from "./config";
 import createTransport from "./transports/createTransport";
 import Room from "./room/room";
 import cleanUp from "./cleanUp";
+import { uuid } from "uuidv4";
 
 const io = new Server(server, {
   cors: {
@@ -101,6 +102,8 @@ peers.on("connection", async (socket) => {
 
   socket.on("joinRoom", ({ roomId, password, userData }, callback) => {
     const room = rooms.get(roomId);
+
+    socket.join(roomId);
 
     console.log({ userData }, "FROM SERVER");
 
@@ -535,6 +538,46 @@ peers.on("connection", async (socket) => {
 
     callback({
       message: "Screen share ended",
+    });
+  });
+
+  /* Chat Events */
+  socket.on("send-message", ({ roomId, message }, callback) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const peer = room.getPeer(socket);
+    if (!peer) return;
+
+    const messageId = uuid();
+    const messageData = {
+      id: messageId,
+      userData: peer.data,
+      message,
+      createdAt: Date.now(),
+      type: "text",
+      isOwn: false,
+    };
+    callback(messageData);
+    socket.to(roomId).emit("user-typing", {
+      from: peer.data,
+      typing: false,
+    });
+    socket.broadcast.emit("receive-message", messageData);
+  });
+
+  socket.on("typing", ({ roomId }: { roomId: string }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const peer = room.getPeer(socket);
+    if (!peer) return;
+
+    const userData = peer.data;
+
+    socket.to(roomId).emit("user-typing", {
+      from: userData,
+      typing: true,
     });
   });
 });
