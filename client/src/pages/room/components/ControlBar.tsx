@@ -1,4 +1,4 @@
-import { CircleX, LogOut, MessageCircle } from "lucide-react";
+import { CircleX, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { socket } from "@/lib/socket";
 import { useParams } from "react-router";
@@ -12,6 +12,7 @@ import Participants from "./Participants";
 import Share from "./Share";
 import Reaction from "./Reaction";
 import RaiseHand from "./RaiseHand";
+import ChatSheet from "./ChatSheet";
 
 export default function ControlBar() {
   const navigate = useNavigate();
@@ -31,13 +32,7 @@ export default function ControlBar() {
 
       <div className="flex items-center gap-2">
         <Participants />
-        <Button
-          variant="outline"
-          className="rounded-md border-gray-700 bg-gray-900 hover:bg-gray-800"
-        >
-          <MessageCircle className="h-5 w-5 text-white" />
-          <p className="text-white text-xs">Chat</p>
-        </Button>
+        <ChatSheet />
         <Share />
         <Reaction />
         <RaiseHand />
