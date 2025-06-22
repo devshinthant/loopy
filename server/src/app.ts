@@ -580,4 +580,19 @@ peers.on("connection", async (socket) => {
       typing: true,
     });
   });
+
+  /* Emoji Reaction Events */
+  socket.on("send-emoji-reaction", ({ roomId, emoji }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const peer = room.getPeer(socket);
+    if (!peer) return;
+
+    const emojiReactionData = {
+      id: uuid(),
+      emoji,
+    };
+    socket.to(roomId).emit("receive-emoji-reaction", emojiReactionData);
+  });
 });

@@ -10,6 +10,7 @@ import SharingParticipantBar from "./SharingParticipantBar";
 import MeView from "./MeView";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import FloatingEmojiContainer from "@/components/FloatingEmojiContainer";
 
 gsap.registerPlugin(useGSAP);
 
@@ -46,6 +47,7 @@ function VideoDisplay() {
 
   return (
     <motion.div className="bg-gradient-to-br relative from-black via-gray-900 py-5 px-[5%]  to-black overflow-hidden flex-1 h-full w-full">
+      <FloatingEmojiContainer />
       <SharingParticipantBar />
       <div className="w-full flex-1 h-full gap-5 flex items-start">
         {isScreenSharing && (

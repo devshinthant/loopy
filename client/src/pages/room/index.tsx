@@ -11,6 +11,7 @@ import AudioStreams from "./components/AudioStreams";
 import StatusBar from "./components/StatusBar";
 import useListenParticipants from "@/hooks/useListenParticipants";
 import cleanUp from "@/lib/cleanUp";
+import { FloatingEmojisProvider } from "@/contexts/FloatingEmojisContext";
 
 export default function Room() {
   const params = useParams();
@@ -100,11 +101,13 @@ export default function Room() {
   }
 
   return (
-    <div className="flex w-full h-full flex-col overflow-hidden">
-      <StatusBar />
-      <VideoDisplay />
-      <AudioStreams />
-      <ControlBar />
-    </div>
+    <FloatingEmojisProvider>
+      <div className="flex w-full h-full flex-col overflow-hidden">
+        <StatusBar />
+        <VideoDisplay />
+        <AudioStreams />
+        <ControlBar />
+      </div>
+    </FloatingEmojisProvider>
   );
 }
