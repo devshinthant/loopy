@@ -8,6 +8,7 @@ import useUserOptionsStore from "@/store/userOptions";
 import VideoOff from "@/components/VideoOff";
 import SpeakingIndicator from "./SpeakingIndicator";
 import { cn } from "@/lib/utils";
+import useRaiseHandStore from "@/store/raiseHand";
 
 const MeView = forwardRef<
   HTMLDivElement,
@@ -18,6 +19,8 @@ const MeView = forwardRef<
   const [, setIsDragging] = useState(false);
   const prevParentRef = useRef(parentRef);
 
+  const { isHandRaised } = useRaiseHandStore();
+
   // Update drag constraints when parentRef changes
   useEffect(() => {
     if (prevParentRef.current !== parentRef && participantJoined) {
@@ -25,6 +28,8 @@ const MeView = forwardRef<
       prevParentRef.current = parentRef;
     }
   }, [parentRef, participantJoined]);
+
+  if (!user) return null;
 
   return (
     <motion.div
@@ -49,6 +54,9 @@ const MeView = forwardRef<
       </VideoWrapper>
       <p className="absolute text-white bottom-2 left-2 text-xs font-semibold">
         You
+        {isHandRaised(user.id) && (
+          <span className="ml-2  text-yellow-400">✋</span>
+        )}
       </p>
       <MicIndicator />
     </motion.div>

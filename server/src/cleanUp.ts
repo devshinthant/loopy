@@ -113,6 +113,11 @@ function clean(room: Room, peer: Peer, socket: Socket) {
   /* Remove Peer */
   room.removePeer(socket);
   console.log("Peer removed");
+
+  socket.to(room.id).emit("participant-left", {
+    participantId: peer.data.id,
+  });
+  console.log("Participant left");
 }
 
 function end(socket: Socket, room: Room) {

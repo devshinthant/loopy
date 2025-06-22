@@ -582,17 +582,51 @@ peers.on("connection", async (socket) => {
   });
 
   /* Emoji Reaction Events */
-  socket.on("send-emoji-reaction", ({ roomId, emoji }) => {
+  socket.on("send-emoji-reaction", ({ roomId, emoji, position }) => {
     const room = rooms.get(roomId);
     if (!room) return;
 
     const peer = room.getPeer(socket);
     if (!peer) return;
 
-    const emojiReactionData = {
-      id: uuid(),
+    const reactionData = {
       emoji,
+      userId: peer.data.id,
+      userName: peer.data.name,
+      position,
     };
-    socket.to(roomId).emit("receive-emoji-reaction", emojiReactionData);
+
+    socket.to(roomId).emit("receive-emoji-reaction", reactionData);
+  });
+
+  /* Raise Hand Events */
+  socket.on("raise-hand", ({ roomId }, callback) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const peer = room.getPeer(socket);
+    if (!peer) return;
+
+    const raiseHandData = {
+      participantId: peer.data.id,
+    };
+
+    socket.to(roomId).emit("participant-raised-hand", raiseHandData);
+    callback({ id: raiseHandData.participantId });
+  });
+
+  socket.on("lower-hand", ({ roomId }, callback) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const peer = room.getPeer(socket);
+    if (!peer) return;
+
+    const lowerHandData = {
+      participantId: peer.data.id,
+    };
+
+    socket.to(roomId).emit("participant-lowered-hand", lowerHandData);
+    callback({ id: lowerHandData.participantId });
   });
 });

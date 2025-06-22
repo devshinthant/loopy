@@ -3,6 +3,7 @@ import useDeviceOptionsStore from "@/store/deviceOptions";
 import useLocalStreamStore from "@/store/local-streams";
 import { useParticipantsStore } from "@/store/participants";
 import useProducersStore from "@/store/producers";
+import useRaiseHandStore from "@/store/raiseHand";
 import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 import useRemoteScreenStreamStore from "@/store/remote-screen-stream";
 import useRemoteStreamStore from "@/store/remote-streams";
@@ -23,10 +24,16 @@ const cleanUp = () => {
   resetSelectedAudioOutput();
   resetSelectedVideoInput();
 
+  /* Clear Raised Hands */
+  const { clearRaisedHands } = useRaiseHandStore.getState();
+  clearRaisedHands();
+  console.log("Raised Hands Cleared");
+
   /* Clear User Options */
   const { resetMicOpened, resetCameraOpened } = useUserOptionsStore.getState();
   resetMicOpened();
   resetCameraOpened();
+  console.log("User Options Cleared");
 
   /* Clear deviceOptions */
   const { resetAudioInputs, resetAudioOutputs, resetVideoInputs } =
@@ -34,6 +41,7 @@ const cleanUp = () => {
   resetAudioInputs();
   resetAudioOutputs();
   resetVideoInputs();
+  console.log("Device Options Cleared");
 
   /* Close Transports */
   const {
@@ -113,20 +121,6 @@ const cleanUp = () => {
   const { resetParticipants } = useParticipantsStore.getState();
   resetParticipants();
   console.log("Participants Reset");
-};
-
-export const testCleanUp = () => {
-  const {
-    resetSelectedAudioInput,
-    resetSelectedAudioOutput,
-    resetSelectedVideoInput,
-  } = useSelectedDevicesStore.getState();
-
-  resetSelectedAudioInput();
-  resetSelectedAudioOutput();
-  resetSelectedVideoInput();
-
-  alert("hiiii");
 };
 
 export default cleanUp;
