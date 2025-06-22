@@ -171,7 +171,22 @@ export default function ChatSheet() {
                   className="w-4 h-4 rounded-full"
                 />
               )}
-              <span>{user.name} is typing...</span>
+              <span>{user.name} is typing</span>
+              <span className="inline-flex">
+                <span className="animate-pulse">.</span>
+                <span
+                  className="animate-pulse"
+                  style={{ animationDelay: "0.2s" }}
+                >
+                  .
+                </span>
+                <span
+                  className="animate-pulse"
+                  style={{ animationDelay: "0.4s" }}
+                >
+                  .
+                </span>
+              </span>
             </div>
           ))}
 
