@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,6 +13,7 @@ import useDeviceOptionsStore from "@/store/deviceOptions";
 import useLocalStreamStore from "@/store/local-streams";
 import useSelectedDevicesStore from "@/store/selectedDevices";
 import { Camera, Mic, Settings, Volume2 } from "lucide-react";
+import TestDevices from "./TestDevices";
 
 export default function DeviceSettingPanel() {
   const {
@@ -78,8 +77,8 @@ export default function DeviceSettingPanel() {
   };
 
   return (
-    <div className="lg:col-span-1">
-      <Card className="bg-black/40 backdrop-blur-sm border-gray-800/50 shadow-2xl">
+    <div className="lg:col-span-1 overflow-y-auto">
+      <Card className="bg-black/40 backdrop-blur-sm h-full overflow-y-scroll border-gray-800/50 shadow-2xl">
         <CardContent className="p-6">
           <div className="flex items-center gap-3 mb-8">
             <Settings className="w-5 h-5 text-gray-400" />
@@ -203,28 +202,7 @@ export default function DeviceSettingPanel() {
 
             <Separator className="bg-gray-600" />
 
-            {/* Test Buttons */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium text-gray-300">
-                Test Devices
-              </Label>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 bg-gray-700 border-gray-600 hover:text-gray-100 text-gray-300 hover:bg-gray-600"
-                >
-                  Test Mic
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 bg-gray-700 border-gray-600 hover:text-gray-100 text-gray-300 hover:bg-gray-600"
-                >
-                  Test Speaker
-                </Button>
-              </div>
-            </div>
+            <TestDevices />
           </div>
         </CardContent>
       </Card>

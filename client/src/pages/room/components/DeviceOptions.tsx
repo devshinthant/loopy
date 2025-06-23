@@ -51,22 +51,10 @@ export default function DeviceOptions({ roomId, type }: DeviceSettingsProps) {
     }
   };
 
-  const handleAudioOutputChange = async (deviceId: string) => {
-    try {
-      // Note: Audio output device change is handled differently
-      // as it doesn't involve mediasoup producers
-      const audioElements = document.querySelectorAll("audio");
-      audioElements.forEach(async (audio) => {
-        if (audio.setSinkId) {
-          await audio.setSinkId(deviceId);
-        }
-      });
-      setSelectedAudioOutput(deviceId);
-      toast.success("Audio output device changed successfully");
-    } catch (error) {
-      console.error("Error changing audio output:", error);
-      toast.error("Failed to change audio output device");
-    }
+  const handleAudioOutputChange = (deviceId: string) => {
+    // The store will automatically handle applying the audio output device
+    setSelectedAudioOutput(deviceId);
+    toast.success("Audio output device changed successfully");
   };
 
   return (

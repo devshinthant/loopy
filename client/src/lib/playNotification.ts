@@ -1,3 +1,5 @@
+import useSelectedDevicesStore from "@/store/selectedDevices";
+
 // Audio instance cache to prevent multiple instances
 const audioInstances: Record<string, HTMLAudioElement> = {};
 
@@ -11,7 +13,12 @@ let volume = 0.5;
 export const playNotification = (
   type: "join" | "leave" | "error" | "message" = "join"
 ) => {
-  if (!isEnabled) return;
+  console.log("🔊 playNotification called with type:", type);
+
+  if (!isEnabled) {
+    console.log("❌ Notifications are disabled");
+    return;
+  }
 
   // Clear any existing debounce timer
   if (debounceTimer) {
@@ -19,7 +26,7 @@ export const playNotification = (
   }
 
   // Debounce rapid successive calls
-  debounceTimer = setTimeout(() => {
+  debounceTimer = setTimeout(async () => {
     const soundMap = {
       join: "/sounds/noti.mp3",
       leave: "/sounds/leave.mp3",
@@ -29,23 +36,52 @@ export const playNotification = (
 
     const soundPath = soundMap[type];
 
-    // Stop any currently playing audio of the same type
-    if (audioInstances[type]) {
-      audioInstances[type].pause();
-      audioInstances[type].currentTime = 0;
-    }
+    try {
+      // Get the selected audio output device directly from the store
+      const selectedAudioOutput =
+        useSelectedDevicesStore.getState().selectedAudioOutput;
 
-    // Create new audio instance if it doesn't exist
-    if (!audioInstances[type]) {
-      audioInstances[type] = new Audio(soundPath);
-      audioInstances[type].volume = volume;
-      audioInstances[type].preload = "auto";
-    }
+      // Stop any currently playing audio of the same type
+      if (audioInstances[type]) {
+        audioInstances[type].pause();
+        audioInstances[type].currentTime = 0;
+      }
 
-    // Play the audio
-    audioInstances[type].play().catch((err) => {
-      console.warn("Auto-play blocked:", err);
-    });
+      // Create new audio instance if it doesn't exist
+      if (!audioInstances[type]) {
+        audioInstances[type] = new Audio(soundPath);
+        audioInstances[type].volume = volume;
+        audioInstances[type].preload = "auto";
+      }
+
+      // Set the sink ID to route audio to the selected device
+      if (selectedAudioOutput && "setSinkId" in audioInstances[type]) {
+        try {
+          await (
+            audioInstances[type] as HTMLAudioElement & {
+              setSinkId: (deviceId: string) => Promise<void>;
+            }
+          ).setSinkId(selectedAudioOutput);
+          console.log(
+            "Successfully routed audio to device:",
+            selectedAudioOutput
+          );
+        } catch (err) {
+          console.warn("Failed to set audio output device:", err);
+        }
+      } else if (selectedAudioOutput) {
+        console.warn("setSinkId not supported in this browser");
+      } else {
+        console.log("No selected audio output device, using default");
+      }
+
+      // Play the audio
+      audioInstances[type].play().catch((err) => {
+        console.warn("Auto-play blocked:", err);
+      });
+    } catch (error) {
+      console.warn("Failed to play notification:", error);
+    }
   }, 100); // 100ms debounce
 };
 
