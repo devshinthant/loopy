@@ -25,6 +25,7 @@ import useLocalStreamStore from "@/store/local-streams";
 import useSelectedDevicesStore from "@/store/selectedDevices";
 import useProducersStore from "@/store/producers";
 import { useParams } from "react-router";
+import { toast } from "sonner";
 
 export default function Microphone() {
   const params = useParams();
@@ -41,9 +42,33 @@ export default function Microphone() {
     try {
       let stream = localAudioStream;
       if (!stream) {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: { deviceId: { exact: selectedAudioInput } },
-        });
+        // Only try exact device ID if we have a valid selection
+        if (selectedAudioInput && selectedAudioInput.trim() !== "") {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: { deviceId: { exact: selectedAudioInput } },
+            });
+          } catch (error) {
+            if (error instanceof OverconstrainedError) {
+              console.warn(
+                "Selected audio device not available, falling back to default"
+              );
+              toast.warning(
+                "Selected microphone not available, using default microphone"
+              );
+              stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+              });
+            } else {
+              throw error;
+            }
+          }
+        } else {
+          // No device selected, use default
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+        }
         setLocalAudioStream(stream);
       }
       const track = stream.getAudioTracks()[0];
@@ -68,6 +93,9 @@ export default function Microphone() {
       setMicOpened(true);
     } catch (error) {
       console.log(error);
+      toast.error(
+        "Failed to start microphone. Please check your microphone permissions."
+      );
     }
   };
 

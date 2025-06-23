@@ -23,6 +23,7 @@ import useSelectedDevicesStore from "@/store/selectedDevices";
 import produce from "@/lib/produce";
 import { socket } from "@/lib/socket";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function Camera() {
   const params = useParams();
@@ -48,9 +49,33 @@ export default function Camera() {
       let stream = localVideoStream;
 
       if (!stream) {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { exact: selectedVideoInput } },
-        });
+        // Only try exact device ID if we have a valid selection
+        if (selectedVideoInput && selectedVideoInput.trim() !== "") {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: { deviceId: { exact: selectedVideoInput } },
+            });
+          } catch (error) {
+            if (error instanceof OverconstrainedError) {
+              console.warn(
+                "Selected video device not available, falling back to default"
+              );
+              toast.warning(
+                "Selected camera not available, using default camera"
+              );
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+              });
+            } else {
+              throw error;
+            }
+          }
+        } else {
+          // No device selected, use default
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          });
+        }
         setLocalVideoStream(stream);
       }
 
@@ -78,6 +103,9 @@ export default function Camera() {
       setCameraOpened(true);
     } catch (error) {
       console.log(error);
+      toast.error(
+        "Failed to start camera. Please check your camera permissions."
+      );
     }
   };
 
