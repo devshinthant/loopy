@@ -1,0 +1,1 @@
+{"root":["./src/app.ts","./src/cleanup.ts","./src/server.ts","./src/config/index.ts","./src/room/peer.ts","./src/room/room.ts","./src/transports/createtransport.ts","./src/utils/getavailabledevices.ts","./src/worker/createworker.ts"],"version":"5.8.3"}
