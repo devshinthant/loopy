@@ -24,9 +24,14 @@ export const rooms = new Map<string, Room>();
 peers.on("connection", async (socket) => {
   console.log("New Connection", socket.id);
 
-  socket.emit("connection-success", {
-    socketId: socket.id,
-  });
+  try {
+    socket.emit("connection-success", {
+      socketId: socket.id,
+    });
+    console.log("EMITTED connection-success to", socket.id);
+  } catch (error) {
+    console.error("Error emitting connection-success:", error);
+  }
 
   socket.on("leave-room", ({ roomId, userId }) => {
     socket.broadcast.emit("participant-update", {

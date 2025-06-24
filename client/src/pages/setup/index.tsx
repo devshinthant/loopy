@@ -31,6 +31,7 @@ import { Loader, Video, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import Loading from "@/components/loading";
+import useSocketStore from "@/store/socket";
 
 const roomSchema = z.object({
   roomName: z.string().min(1, {
@@ -46,7 +47,7 @@ export default function Setup() {
 
   const { setRtpCapabilities, setDevice } = useRoomStore();
   const { setReceiveTransport, setProduceTransport } = useTransportsStore();
-
+  const { isConnected } = useSocketStore();
   const { user, isLoaded } = useUser();
 
   const [loading, setLoading] = useState({
@@ -211,7 +212,7 @@ export default function Setup() {
     );
   }
 
-  if (!socket.connected) {
+  if (!isConnected) {
     return <Navigate to="/socket-error" />;
   }
 
