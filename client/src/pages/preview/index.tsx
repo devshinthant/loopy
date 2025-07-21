@@ -8,8 +8,8 @@ export default function Preview() {
   const { state } = useLocation();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center p-4">
-      <div className="w-full max-w-7xl">
+    <div className="h-dvh bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center p-10">
+      <div className="w-full flex  flex-col h-full xl:max-w-7xl">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-3">Ready to join?</h1>
@@ -35,7 +35,7 @@ export default function Preview() {
           </div>
         </div>
         {/* Header */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 flex-1 overflow-hidden   lg:grid-cols-4 gap-8">
           <MainPreview />
           <DeviceSettingPanel />
         </div>

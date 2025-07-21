@@ -238,10 +238,10 @@ export default function MainPreview() {
   });
 
   return (
-    <div className="lg:col-span-2">
-      <Card className="bg-black/40 p-0 backdrop-blur-sm border-gray-800/50 shadow-2xl mb-8">
-        <CardContent className="p-0">
-          <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+    <div className="lg:col-span-2 flex flex-col">
+      <Card className="bg-black/40 flex-1 p-0 backdrop-blur-sm border-gray-800/50 shadow-2xl mb-8">
+        <CardContent className="p-0 h-full">
+          <div className="relative h-full w-full bg-black rounded-lg overflow-hidden">
             {!cameraOpened && (
               <div className="absolute inset-0 z-1 flex items-center justify-center bg-black/80">
                 <div className="text-center">
