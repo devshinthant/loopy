@@ -28,7 +28,7 @@ const cleanUp = ({ socket, roomId, endRoom = false }: CleanUpProps) => {
       clean(room, peer, socket);
       if (!endRoom) {
         if (peer.videoProducer) {
-          socket.broadcast.emit("producer-update", {
+          socket.to(roomId).emit("producer-update", {
             producerId: peer.videoProducer.id,
             kind: "video",
             type: "remove",
@@ -36,7 +36,7 @@ const cleanUp = ({ socket, roomId, endRoom = false }: CleanUpProps) => {
         }
 
         if (peer.audioProducer) {
-          socket.broadcast.emit("producer-update", {
+          socket.to(roomId).emit("producer-update", {
             producerId: peer.audioProducer.id,
             kind: "audio",
             type: "remove",
@@ -44,7 +44,7 @@ const cleanUp = ({ socket, roomId, endRoom = false }: CleanUpProps) => {
         }
 
         if (peer.screenShareProducer) {
-          socket.broadcast.emit("producer-update", {
+          socket.to(roomId).emit("producer-update", {
             producerId: peer.screenShareProducer.id,
             kind: "video",
             screenShare: true,
@@ -60,7 +60,7 @@ const cleanUp = ({ socket, roomId, endRoom = false }: CleanUpProps) => {
         clean(room, peer, socket);
         if (!endRoom) {
           if (peer.videoProducer) {
-            socket.broadcast.emit("producer-update", {
+            socket.to(room.id).emit("producer-update", {
               producerId: peer.videoProducer.id,
               kind: "video",
               type: "remove",
@@ -68,7 +68,7 @@ const cleanUp = ({ socket, roomId, endRoom = false }: CleanUpProps) => {
           }
 
           if (peer.audioProducer) {
-            socket.broadcast.emit("producer-update", {
+            socket.to(room.id).emit("producer-update", {
               producerId: peer.audioProducer.id,
               kind: "audio",
               type: "remove",
@@ -76,7 +76,7 @@ const cleanUp = ({ socket, roomId, endRoom = false }: CleanUpProps) => {
           }
 
           if (peer.screenShareProducer) {
-            socket.broadcast.emit("producer-update", {
+            socket.to(room.id).emit("producer-update", {
               producerId: peer.screenShareProducer.id,
               kind: "video",
               screenShare: true,
@@ -123,7 +123,7 @@ function clean(room: Room, peer: Peer, socket: Socket) {
 function end(socket: Socket, room: Room) {
   room.router?.close();
   rooms.delete(room.id);
-  socket.broadcast.emit("room-ended", { roomId: room.id });
+  socket.to(room.id).emit("room-ended", { roomId: room.id });
   console.log("Server Router closed");
 }
 

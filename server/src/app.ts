@@ -34,7 +34,7 @@ peers.on("connection", async (socket) => {
   }
 
   socket.on("leave-room", ({ roomId, userId }) => {
-    socket.broadcast.emit("participant-update", {
+    socket.to(roomId).emit("participant-update", {
       participant: {
         id: userId,
       },
@@ -47,7 +47,7 @@ peers.on("connection", async (socket) => {
     rooms.forEach((room) => {
       const peer = room.getPeer(socket);
       if (!peer) return;
-      socket.broadcast.emit("participant-update", {
+      socket.to(room.id).emit("participant-update", {
         participant: {
           id: peer.data.id,
         },
@@ -89,6 +89,9 @@ peers.on("connection", async (socket) => {
       if (!worker) {
         worker = await createWorker();
       }
+
+      socket.join(roomId);
+
       const router = await worker.createRouter({
         mediaCodecs,
       });
@@ -107,8 +110,6 @@ peers.on("connection", async (socket) => {
 
   socket.on("joinRoom", ({ roomId, password, userData }, callback) => {
     const room = rooms.get(roomId);
-
-    socket.join(roomId);
 
     console.log({ userData }, "FROM SERVER");
 
@@ -132,8 +133,9 @@ peers.on("connection", async (socket) => {
   socket.on("enter-room", ({ roomId, userData }, callback) => {
     const room = rooms.get(roomId);
     if (!room) return;
+    socket.join(roomId);
 
-    socket.broadcast.emit("participant-update", {
+    socket.to(roomId).emit("participant-update", {
       participant: userData,
       type: "add",
     });
@@ -260,7 +262,7 @@ peers.on("connection", async (socket) => {
 
         callback({ id: producer.id });
 
-        socket.broadcast.emit("producer-update", {
+        socket.to(roomId).emit("producer-update", {
           producerId: producer.id,
           kind: producer.kind,
           screenShare: appData.screenShare,
@@ -493,7 +495,7 @@ peers.on("connection", async (socket) => {
 
     console.log("server producer-paused", { producerId, roomId, kind });
 
-    socket.broadcast.emit("peer-producer-paused", {
+    socket.to(roomId).emit("peer-producer-paused", {
       producerId,
       peerId: socket.id,
       kind,
@@ -513,7 +515,7 @@ peers.on("connection", async (socket) => {
       await peer.videoProducer?.resume();
     }
     console.log("server producer-resumed", { producerId, roomId, kind });
-    socket.broadcast.emit("peer-producer-resumed", {
+    socket.to(roomId).emit("peer-producer-resumed", {
       producerId,
       peerId: socket.id,
       kind,
@@ -532,7 +534,7 @@ peers.on("connection", async (socket) => {
     peer.screenShareProducer?.close();
     peer.screenShareProducer = undefined;
 
-    socket.broadcast.emit("producer-update", {
+    socket.to(roomId).emit("producer-update", {
       peerId: socket.id,
       producerId: "",
       kind: "video",
@@ -568,7 +570,7 @@ peers.on("connection", async (socket) => {
       from: peer.data,
       typing: false,
     });
-    socket.broadcast.emit("receive-message", messageData);
+    socket.to(roomId).emit("receive-message", messageData);
   });
 
   socket.on("typing", ({ roomId }: { roomId: string }) => {
