@@ -4,7 +4,6 @@ import { socket } from "@/lib/socket";
 import { useParams } from "react-router";
 import { useNavigate } from "react-router";
 import cleanUp from "@/lib/cleanUp";
-import { useUser } from "@clerk/clerk-react";
 import Microphone from "./Microphone";
 import Camera from "./Camera";
 import Speaker from "./Speaker";
@@ -13,6 +12,7 @@ import Share from "./Share";
 import Reaction from "./Reaction";
 import RaiseHand from "./RaiseHand";
 import ChatSheet from "./ChatSheet";
+import { useUser } from "@clerk/clerk-react";
 
 export default function ControlBar() {
   const navigate = useNavigate();

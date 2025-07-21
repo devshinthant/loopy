@@ -20,11 +20,13 @@ const createTransport = async (
         }
   ) => void
 ) => {
+  console.log(process.env.LISTEN_IP, process.env.ANNOUNCED_IP, "HEHE");
   try {
     const webRtcTransportOptions = {
       listenIps: [
         {
-          ip: "127.0.0.1",
+          ip: process.env.LISTEN_IP || "0.0.0.0",
+          announcedIp: process.env.ANNOUNCED_IP || "0.0.0.0",
         },
       ],
       enableUdp: true,

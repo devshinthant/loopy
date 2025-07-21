@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import express from "express";
 import http from "http";
 import cors from "cors";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 
@@ -16,10 +19,15 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });
 
-const server = http.createServer(app);
+// Create HTTP server
+const httpServer = http.createServer(app);
 
-server.listen(4000, () => {
-  console.log("HTTP Server is running on port 4000");
-});
+try {
+  httpServer.listen(process.env.PORT, () => {
+    console.log(`HTTPS Server is running on port ${process.env.PORT}`);
+  });
+} catch (error) {
+  console.log("SSL certificates not found, running HTTP only");
+}
 
-export default server;
+export default httpServer;

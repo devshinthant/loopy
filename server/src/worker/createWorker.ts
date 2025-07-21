@@ -2,8 +2,8 @@ import * as mediasoup from "mediasoup";
 
 async function createWorker() {
   const config = {
-    rtcMinPort: 2000,
-    rtcMaxPort: 2020,
+    rtcMinPort: 40000,
+    rtcMaxPort: 40100,
   };
 
   const worker = await mediasoup.createWorker(config);

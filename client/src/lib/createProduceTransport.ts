@@ -31,7 +31,11 @@ const createProduceTransport = ({
         return;
       }
 
-      const transport = device.createSendTransport(params);
+      const transport = device.createSendTransport({
+        ...params,
+        iceTransportPolicy: "all",
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      });
       console.log({ transport }, "Produce Transport Created");
       setProduceTransport(transport);
 

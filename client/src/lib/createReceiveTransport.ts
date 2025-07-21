@@ -30,7 +30,11 @@ const createReceiveTransport = ({
         return console.log(params.error);
       }
 
-      const transport = device.createRecvTransport(params);
+      const transport = device.createRecvTransport({
+        ...params,
+        iceTransportPolicy: "all",
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      });
       setReceiveTransport(transport);
 
       console.log({ transport }, "Receive Transport Created");
