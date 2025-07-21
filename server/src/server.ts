@@ -8,6 +8,11 @@ dotenv.config();
 
 const app = express();
 
+console.log(process.env.PORT, "PORT");
+console.log(process.env.LISTEN_IP, "LISTEN_IP");
+console.log(process.env.ANNOUNCED_IP, "ANNOUNCED_IP");
+console.log(process.env.NODE_ENV, "NODE_ENV");
+
 app.use(
   cors({
     origin: "*",
