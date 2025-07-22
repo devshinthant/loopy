@@ -4,21 +4,16 @@ import useRemoteAudioStreamStore from "@/store/remote-audio-streams";
 import useRemoteStreamStore from "@/store/remote-streams";
 import { MicOff } from "lucide-react";
 import DisplayBoxWrapper from "./DisplayBoxWrapper";
+import { memo } from "react";
 
-export default function DisplayBox({
-  data,
-  col,
-}: {
-  data: UserData;
-  col: number;
-}) {
+function DisplayBox({ data }: { data: UserData }) {
   const { remoteStreams } = useRemoteStreamStore();
   const videoStream = remoteStreams?.find(
     (stream) => stream.emitterId === data.id
   );
 
   return (
-    <DisplayBoxWrapper data={data} col={col}>
+    <DisplayBoxWrapper data={data}>
       {videoStream && !videoStream?.paused && (
         <video
           ref={(el) => {
@@ -48,6 +43,8 @@ export default function DisplayBox({
     </DisplayBoxWrapper>
   );
 }
+
+export default memo(DisplayBox);
 
 const MicIndicator = ({ userId }: { userId: string }) => {
   const { remoteAudioStreams } = useRemoteAudioStreamStore();

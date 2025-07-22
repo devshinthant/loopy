@@ -60,11 +60,24 @@ function VideoDisplay() {
           ref={constraintsRef}
           className={cn("h-full flex relative gap-5 flex-row", {
             "w-[20%] flex-col": isScreenSharing,
-            "w-full": !isScreenSharing,
+            "w-full grid gap-5": !isScreenSharing,
           })}
+          style={{
+            gridTemplateColumns: !isScreenSharing
+              ? `repeat(${
+                  participants.length > 9
+                    ? 4
+                    : participants.length > 4
+                    ? 3
+                    : participants.length > 1
+                    ? 2
+                    : 1
+                }, minmax(0, 1fr))`
+              : "",
+          }}
         >
           {participants.map((stream) => {
-            return <DisplayBox col={4} key={stream.id} data={stream} />;
+            return <DisplayBox key={stream.id} data={stream} />;
           })}
 
           {isScreenSharing && (
