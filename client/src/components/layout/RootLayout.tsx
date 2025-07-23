@@ -3,6 +3,7 @@ import { Toaster } from "../ui/sonner";
 import { cleanupNotifications } from "@/lib/playNotification";
 import { Navigate } from "react-router";
 import useSocketStore from "@/store/socket";
+import { Analytics } from "@vercel/analytics/react";
 
 export default function RootLayout({
   children,
@@ -27,6 +28,7 @@ export default function RootLayout({
     <div className="h-dvh relative overflow-hidden w-dvw">
       {children}
       <Toaster />
+      <Analytics />
     </div>
   );
 }
