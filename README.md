@@ -21,11 +21,10 @@
 
 **Client (.env):**
 - `VITE_SERVER_URL=http://localhost:3001` - Server URL for WebSocket connections
+- `VITE_CLERK_PUBLISHABLE_KEY=yourclerk-key` - Server URL for WebSocket connections
 
 The README provides clear instructions for contributors to:
 - Clone and install dependencies
 - Set up environment variables
-- Generate SSL certificates (optional)
 - Run the application in development mode
 - Build for production
-- Troubleshoot common issues
